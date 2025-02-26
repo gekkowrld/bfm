@@ -12,7 +12,11 @@ pub struct ColumnWidth {
 impl Config {
     pub fn new() -> Self {
         Self {
-            column_width: ColumnWidth::default(),
+            column_width: ColumnWidth {
+                name: 1.0,
+                type_: 1.0,
+                size: 1.0,
+            },
         }
     }
 
@@ -43,5 +47,11 @@ impl Config {
             .unwrap();
 
         widths
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
     }
 }

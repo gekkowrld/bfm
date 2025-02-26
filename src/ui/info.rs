@@ -1,13 +1,16 @@
 use std::path::PathBuf;
 
-use crate::config::config::Config;
+use crate::config::conf::Config;
 use crate::files::dir;
 use crate::ui::file_container::box_display;
 use iced::widget::{Column, row, scrollable};
 use iced::widget::{rich_text, span};
 use iced::{Element, Length};
 
-pub fn directory_information(path: PathBuf) -> Element<'static, crate::window::files::Message> {
+pub fn directory_information(
+    hover_id: String,
+    path: PathBuf,
+) -> Element<'static, crate::window::files::Message> {
     let config = Config::new().get_column_width();
     let directory = dir::directory_content(path);
     // Name,type,size
@@ -18,8 +21,12 @@ pub fn directory_information(path: PathBuf) -> Element<'static, crate::window::f
     ]);
 
     for file in directory.files {
-        column = column.push(box_display(file));
+        if file.id == hover_id {
+            column = column.push(box_display(iced::widget::container::dark, file));
+        } else {
+            column = column.push(box_display(iced::widget::container::bordered_box, file));
+        }
     }
 
-    scrollable(column).into()
+    scrollable(column.spacing(12)).into()
 }

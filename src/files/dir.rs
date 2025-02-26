@@ -1,5 +1,5 @@
 use crate::files::file::File;
-use std::path::PathBuf;
+use std::{fs::DirEntry, path::PathBuf};
 use url::Url;
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ pub fn directory_content(directory: PathBuf) -> Directory {
         } else {
             Url::from_file_path(&path).unwrap()
         };
-        let _file = File::new(file_url, path.clone());
+        let _file = File::new(file_id(&entry), file_url, path.clone());
 
         let file = match _file {
             Ok(file) => file,
@@ -48,4 +48,8 @@ pub fn directory_content(directory: PathBuf) -> Directory {
         dir.add_file(file);
     }
     dir
+}
+
+fn file_id(file_info: &DirEntry) -> String {
+    file_info.file_name().to_str().unwrap().to_string()
 }
