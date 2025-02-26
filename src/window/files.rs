@@ -95,29 +95,30 @@ impl Window {
                 self.display_bar_content = url.path().to_owned();
             }
 
-            Message::WindowEvent(event) => match event {
-                iced::Event::Window(window_event) => match window_event {
-                    iced::window::Event::RedrawRequested(pos) => {
-                        println!("Requst redraw: {:#?}", pos);
+            Message::WindowEvent(event) => {
+                if let iced::Event::Window(window_event) = event {
+                    match window_event {
+                        iced::window::Event::RedrawRequested(pos) => {
+                            println!("Requst redraw: {:#?}", pos);
+                        }
+                        iced::window::Event::Opened { position: _, size } => {
+                            let mut width = crate::config::conf::ColumnWidth::default();
+                            width.name = size.width / 3.0;
+                            width.size = size.width / 3.0;
+                            width.type_ = size.width / 3.0;
+                            conf::Config::new().set_column_width(&width);
+                        }
+                        iced::window::Event::Resized(size) => {
+                            let mut width = crate::config::conf::ColumnWidth::default();
+                            width.name = size.width / 3.0;
+                            width.size = size.width / 3.0;
+                            width.type_ = size.width / 3.0;
+                            conf::Config::new().set_column_width(&width);
+                        }
+                        _ => {}
                     }
-                    iced::window::Event::Opened { position: _, size } => {
-                        let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = size.width / 3.0;
-                        width.size = size.width / 3.0;
-                        width.type_ = size.width / 3.0;
-                        conf::Config::new().set_column_width(&width);
-                    }
-                    iced::window::Event::Resized(size) => {
-                        let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = size.width / 3.0;
-                        width.size = size.width / 3.0;
-                        width.type_ = size.width / 3.0;
-                        conf::Config::new().set_column_width(&width);
-                    }
-                    _ => {}
-                },
-                _ => {}
-            },
+                }
+            }
 
             Message::ButtonPressed(action) => match action {
                 ButtonAction::NewFolder => {
