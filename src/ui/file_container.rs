@@ -8,6 +8,7 @@ use iced::widget::span;
 
 use crate::config::conf::Config;
 use crate::files::file::File;
+use crate::ui::file_icon::icon;
 use crate::window::files::Message;
 use std::path::Path;
 
@@ -22,6 +23,7 @@ pub fn box_display<'a>(
     mouse_area(
         container(
             row![
+                icon(file_info.is_dir),
                 rich_text![span(
                     Path::new(&url.path().to_owned())
                         .file_name()

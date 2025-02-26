@@ -2,7 +2,8 @@
 name = "bfm"
 version = "0.1.0"
 edition = "2024"
+authors = ["Gordon Onayo <gekkowrld@gmail.com"]
 
 [dependencies]
-iced = "0.13.1"
+iced = { version = "0.13.1", features = ["advanced", "svg"] }
 url = "2.5.4"
