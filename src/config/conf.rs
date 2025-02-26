@@ -29,24 +29,22 @@ impl Config {
     }
 
     pub fn get_column_width(&self) -> ColumnWidth {
-        let mut widths = ColumnWidth::default();
-
-        widths.name = std::env::var("BFM_COLUMN_WIDTH_NAME")
+        let name: f32 = std::env::var("BFM_COLUMN_WIDTH_NAME")
             .unwrap_or("1.0".to_string())
             .parse()
             .unwrap();
 
-        widths.size = std::env::var("BFM_COLUMN_WIDTH_SIZE")
+        let size: f32 = std::env::var("BFM_COLUMN_WIDTH_SIZE")
             .unwrap_or("1.0".to_string())
             .parse()
             .unwrap();
 
-        widths.type_ = std::env::var("BFM_COLUMN_WIDTH_TYPE")
+        let type_: f32 = std::env::var("BFM_COLUMN_WIDTH_TYPE")
             .unwrap_or("1.0".to_string())
             .parse()
             .unwrap();
 
-        widths
+        ColumnWidth { name, size, type_ }
     }
 }
 
