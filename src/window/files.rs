@@ -50,7 +50,7 @@ impl Window {
             Screen::Files(_, file_url) => file_url.path().to_owned(),
         }
         .replace("/", " - ")
-            + " -- bfm file manager"
+            + " — bfm file manager"
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
