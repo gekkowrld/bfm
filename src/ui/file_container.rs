@@ -34,13 +34,14 @@ pub fn box_display<'a>(
                 text!("{}", file_info.file.metadata().unwrap().len().to_string())
                     .width(Length::Fixed(config.type_)),
             ]
-            .height(Length::Fixed(42.2))
+            .padding(10)
             .width(Length::Fill),
         )
         .style(box_style),
     )
     .on_press(Message::BoxClicked(url.clone()))
-    .on_enter(Message::BoxHovered(parent_url, file_info.id))
+    .on_enter(Message::BoxHovered(parent_url.clone(), file_info.id))
+    .on_exit(Message::BoxHovered(parent_url, "".to_string()))
     .interaction(iced::mouse::Interaction::Pointer)
     .into()
 }
