@@ -68,6 +68,7 @@ impl Window {
     }
 
     pub fn new() -> (Self, Task<Message>) {
+        let mut content = text_editor::Content::new();
         let conf = conf::Config::new();
         let screen = match conf.get_last_path() {
             Some(path) => {
@@ -75,6 +76,20 @@ impl Window {
                 if path.is_dir() {
                     Screen::Files("".to_string(), path)
                 } else {
+                    let file_content = match file::file_content(path.clone()) {
+                        Ok(content) => content,
+                        Err(err) => {
+                            return (
+                                Self {
+                                    screen: Screen::ErrorDislay(err.to_string()),
+                                    display_bar_content: path.to_string_lossy().to_string(),
+                                    content,
+                                },
+                                Task::none(),
+                            );
+                        }
+                    };
+                    content = text_editor::Content::with_text(&file_content);
                     Screen::FileDisplay(path)
                 }
             }
@@ -84,7 +99,7 @@ impl Window {
             Self {
                 screen,
                 display_bar_content: String::new(),
-                content: text_editor::Content::new(),
+                content,
             },
             Task::none(),
         )
