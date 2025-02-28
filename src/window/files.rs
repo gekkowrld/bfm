@@ -5,7 +5,7 @@ use iced::{Element, Task, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
-use crate::files::fs;
+use crate::fs::file;
 use crate::ui::display_bar::display_bar;
 use crate::ui::error_page::error_display;
 use crate::ui::info::directory_information;
@@ -55,8 +55,8 @@ impl Window {
     pub fn title(&self) -> String {
         match &self.screen {
             Screen::Welcome => "Welcome".to_owned(),
-            Screen::Files(_, file_path) => fs::path_to_string(file_path),
-            Screen::FileDisplay(file_path) => fs::path_to_string(file_path),
+            Screen::Files(_, file_path) => file::path_to_string(file_path),
+            Screen::FileDisplay(file_path) => file::path_to_string(file_path),
             Screen::ErrorDislay(error) => error.clone(),
         }
         .replace("/", " - ")
@@ -91,7 +91,7 @@ impl Window {
             }
 
             Message::OpenFile(file_path) => {
-                let content = match fs::file_content(file_path.clone()) {
+                let content = match file::file_content(file_path.clone()) {
                     Ok(content) => content,
                     Err(err) => {
                         self.screen = Screen::ErrorDislay(err.to_string());
@@ -104,12 +104,12 @@ impl Window {
             }
             Message::BoxHovered(file_path, id) => {
                 self.screen = Screen::Files(id, file_path.clone());
-                self.display_bar_content = fs::path_to_string(&file_path);
+                self.display_bar_content = file::path_to_string(&file_path);
             }
 
             Message::OpenLink(link_path) => {
                 self.screen = Screen::Files("".to_string(), link_path.clone());
-                self.display_bar_content = fs::path_to_string(&link_path);
+                self.display_bar_content = file::path_to_string(&link_path);
             }
 
             Message::DisplayBarContentChanged(content) => {
@@ -123,7 +123,7 @@ impl Window {
 
             Message::BoxClicked(file_path) => {
                 self.screen = Screen::Files("".to_string(), file_path.clone());
-                self.display_bar_content = fs::path_to_string(&file_path);
+                self.display_bar_content = file::path_to_string(&file_path);
             }
 
             Message::WindowEvent(event) => {

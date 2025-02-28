@@ -6,7 +6,7 @@ use iced::widget::row;
 use iced::widget::text;
 
 use crate::config::conf::Config;
-use crate::files::fs::File;
+use crate::fs::file::File;
 use crate::ui::file_icon::icon;
 use crate::window::files::Message;
 

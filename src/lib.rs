@@ -1,4 +1,4 @@
 pub mod config;
-pub mod files;
+pub mod fs;
 pub mod ui;
 pub mod window;
