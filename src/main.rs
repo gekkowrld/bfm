@@ -6,5 +6,6 @@ pub fn main() -> iced::Result {
         .resizable(true)
         .decorations(true)
         .subscription(Window::subscription)
+        .exit_on_close_request(false)
         .run_with(Window::new)
 }

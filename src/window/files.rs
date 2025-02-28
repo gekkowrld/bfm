@@ -68,9 +68,21 @@ impl Window {
     }
 
     pub fn new() -> (Self, Task<Message>) {
+        let conf = conf::Config::new();
+        let screen = match conf.get_last_path() {
+            Some(path) => {
+                let path = PathBuf::from(path);
+                if path.is_dir() {
+                    Screen::Files("".to_string(), path)
+                } else {
+                    Screen::FileDisplay(path)
+                }
+            }
+            None => Screen::Welcome,
+        };
         (
             Self {
-                screen: Screen::Welcome,
+                screen,
                 display_bar_content: String::new(),
                 content: text_editor::Content::new(),
             },
@@ -78,16 +90,17 @@ impl Window {
         )
     }
 
-    pub fn update(&mut self, message: Message) {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::ToggleFullscreen(_mode) => {}
+            Message::ToggleFullscreen(_mode) => Task::none(),
             Message::Edit(action) => {
-                println!("{:#?}", action);
                 self.content.perform(action);
+                Task::none()
             }
 
             Message::Error(error) => {
                 self.screen = Screen::ErrorDislay(error);
+                Task::none()
             }
 
             Message::OpenFile(file_path) => {
@@ -95,85 +108,83 @@ impl Window {
                     Ok(content) => content,
                     Err(err) => {
                         self.screen = Screen::ErrorDislay(err.to_string());
-                        return;
+                        return Task::none();
                     }
                 };
 
                 self.content = text_editor::Content::with_text(&content);
-                self.screen = Screen::FileDisplay(file_path);
+                self.screen = Screen::FileDisplay(file_path.clone());
+                self.display_bar_content = file::path_to_string(&file_path);
+                Task::none()
             }
             Message::BoxHovered(file_path, id) => {
                 self.screen = Screen::Files(id, file_path.clone());
                 self.display_bar_content = file::path_to_string(&file_path);
+                Task::none()
             }
 
             Message::OpenLink(link_path) => {
                 self.screen = Screen::Files("".to_string(), link_path.clone());
                 self.display_bar_content = file::path_to_string(&link_path);
+                Task::none()
             }
 
             Message::DisplayBarContentChanged(content) => {
                 self.display_bar_content = content;
+                Task::none()
             }
 
             Message::DisplayBarContentSubmitted => {
                 self.screen =
                     Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
+                Task::none()
             }
 
             Message::BoxClicked(file_path) => {
                 self.screen = Screen::Files("".to_string(), file_path.clone());
                 self.display_bar_content = file::path_to_string(&file_path);
+                Task::none()
             }
 
             Message::WindowEvent(event) => {
-                if let iced::Event::Window(window_event) = event {
-                    match window_event {
-                        iced::window::Event::RedrawRequested(pos) => {
-                            println!("Requst redraw: {:#?}", pos);
-                        }
-                        iced::window::Event::Opened { position: _, size } => {
-                            let mut width = crate::config::conf::ColumnWidth::default();
-                            width.name = size.width / 3.0;
-                            width.size = size.width / 3.0;
-                            width.type_ = size.width / 3.0;
-                            conf::Config::new().set_column_width(&width);
-                        }
-                        iced::window::Event::Resized(size) => {
-                            let mut width = crate::config::conf::ColumnWidth::default();
-                            width.name = (size.width / 3.0) - 20.0;
-                            width.size = size.width / 3.0;
-                            width.type_ = size.width / 3.0;
-                            conf::Config::new().set_column_width(&width);
-                        }
-                        _ => {}
+                let window_event = match event {
+                    iced::Event::Window(window_event) => window_event,
+                    _ => return Task::none(),
+                };
+                let x: Task<Message> = match window_event {
+                    iced::window::Event::Opened { position: _, size } => {
+                        let mut width = crate::config::conf::ColumnWidth::default();
+                        width.name = size.width / 3.0;
+                        width.size = size.width / 3.0;
+                        width.type_ = size.width / 3.0;
+                        conf::Config::new().set_column_width(&width);
+                        Task::none()
                     }
-                }
+                    iced::window::Event::Resized(size) => {
+                        let mut width = crate::config::conf::ColumnWidth::default();
+                        width.name = (size.width / 3.0) - 20.0;
+                        width.size = size.width / 3.0;
+                        width.type_ = size.width / 3.0;
+                        conf::Config::new().set_column_width(&width);
+                        Task::none()
+                    }
+
+                    iced::window::Event::CloseRequested => {
+                        let mut conf = conf::Config::new();
+
+                        if !self.display_bar_content.is_empty() {
+                            conf.set_last_path(&self.display_bar_content);
+                        }
+
+                        window::get_latest().and_then(window::close)
+                    }
+                    _ => Task::none(),
+                };
+
+                x
             }
 
-            Message::ButtonPressed(action) => match action {
-                ButtonAction::NewFolder => {
-                    println!("New Folder")
-                }
-                ButtonAction::Delete => {
-                    println!("Delete")
-                }
-                ButtonAction::Rename => {
-                    println!("Rename")
-                }
-                ButtonAction::Copy => {
-                    println!("Copy")
-                }
-                ButtonAction::Paste => {
-                    println!("Paste")
-                }
-                ButtonAction::Cut => {
-                    println!("Cut")
-                }
-                ButtonAction::Quit => {
-                    println!("Quit")
-                }
-            },
+            Message::ButtonPressed(_action) => Task::none(),
         }
     }
 
