@@ -32,7 +32,7 @@ impl Config {
     }
 
     fn create_new_conf() -> Config {
-        let config: Config = Self::default();
+        let config: Config = Self::default_config();
         let config_string = toml::to_string(&config).unwrap();
 
         // Create parent directory if it doesn't exist
@@ -43,7 +43,7 @@ impl Config {
         config
     }
 
-    pub fn default() -> Self {
+    pub fn default_config() -> Self {
         Self {
             column_width: ColumnWidth {
                 name: 50.0,
@@ -85,6 +85,6 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self::default()
+        Self::default_config()
     }
 }
