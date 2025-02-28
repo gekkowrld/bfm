@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::config::conf::Config;
-use crate::files::dir;
+use crate::files::fs;
 use crate::ui::file_container::box_display;
 use iced::widget::{Column, row, scrollable};
 use iced::widget::{rich_text, span};
@@ -12,8 +12,8 @@ pub fn directory_information(
     path: PathBuf,
 ) -> Element<'static, crate::window::files::Message> {
     let config = Config::new().get_column_width();
-    let directory = dir::directory_content(path);
-    // Name,type,size
+    let directory = fs::directory_content(path);
+
     let mut column = Column::new().push(row![
         rich_text![span("Name").size(50)].width(Length::Fixed(config.name)),
         rich_text![span("Type").size(50)].width(Length::Fixed(config.type_)),

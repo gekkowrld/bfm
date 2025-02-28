@@ -1,6 +1,24 @@
-use crate::files::file::File;
-use std::{fs::DirEntry, path::PathBuf};
+use std::fs::DirEntry;
+use std::path::{Path, PathBuf};
 use url::Url;
+
+#[derive(Debug)]
+pub struct File {
+    pub id: String,
+    pub path: PathBuf,
+    pub file: std::fs::File,
+}
+
+impl File {
+    pub fn new(id: String, path: PathBuf) -> Result<File, std::io::Error> {
+        let file = std::fs::File::open(&path)?;
+        Ok(File { id, path, file })
+    }
+}
+
+pub fn file_content(path: PathBuf) -> Result<String, std::io::Error> {
+    std::fs::read_to_string(path)
+}
 
 #[derive(Debug)]
 pub struct Directory {
@@ -31,12 +49,7 @@ pub fn directory_content(directory: PathBuf) -> Directory {
     for entry in entries {
         let entry = entry.unwrap();
         let path = entry.path();
-        let file_url = if path.is_dir() {
-            Url::from_directory_path(&path).unwrap()
-        } else {
-            Url::from_file_path(&path).unwrap()
-        };
-        let _file = File::new(file_id(&entry), file_url, path.clone());
+        let _file = File::new(file_id(&entry), path.clone());
 
         let file = match _file {
             Ok(file) => file,
@@ -52,4 +65,8 @@ pub fn directory_content(directory: PathBuf) -> Directory {
 
 fn file_id(file_info: &DirEntry) -> String {
     file_info.file_name().to_str().unwrap().to_string()
+}
+
+pub fn path_to_string(path: &Path) -> String {
+    path.to_str().unwrap().to_string()
 }

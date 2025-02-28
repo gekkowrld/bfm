@@ -1,35 +1,43 @@
 use std::path::PathBuf;
 
-use iced::widget::column;
+use iced::widget::{column, text_editor};
 use iced::{Element, Task, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
+use crate::files::fs;
 use crate::ui::display_bar::display_bar;
+use crate::ui::error_page::error_display;
 use crate::ui::info::directory_information;
 use crate::ui::welcome::welcome_content;
 
 pub struct Window {
     screen: Screen,
     display_bar_content: String,
+    content: text_editor::Content,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
     ToggleFullscreen(window::Mode),
-    OpenLink(url::Url),
+    OpenLink(PathBuf),
     ButtonPressed(ButtonAction),
     DisplayBarContentChanged(String),
     DisplayBarContentSubmitted,
-    BoxClicked(url::Url),
+    BoxClicked(PathBuf),
     WindowEvent(iced::Event),
-    BoxHovered(url::Url, String),
+    BoxHovered(PathBuf, String),
+    Edit(text_editor::Action),
+    OpenFile(PathBuf),
+    Error(String),
 }
 
 #[derive(Debug, Clone)]
 pub enum Screen {
     Welcome,
-    Files(String, url::Url),
+    Files(String, PathBuf),
+    FileDisplay(PathBuf),
+    ErrorDislay(String),
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +55,9 @@ impl Window {
     pub fn title(&self) -> String {
         match &self.screen {
             Screen::Welcome => "Welcome".to_owned(),
-            Screen::Files(_, file_url) => file_url.path().to_owned(),
+            Screen::Files(_, file_path) => fs::path_to_string(file_path),
+            Screen::FileDisplay(file_path) => fs::path_to_string(file_path),
+            Screen::ErrorDislay(error) => error.clone(),
         }
         .replace("/", " - ")
             + " — bfm file manager"
@@ -62,6 +72,7 @@ impl Window {
             Self {
                 screen: Screen::Welcome,
                 display_bar_content: String::new(),
+                content: text_editor::Content::new(),
             },
             Task::none(),
         )
@@ -70,14 +81,35 @@ impl Window {
     pub fn update(&mut self, message: Message) {
         match message {
             Message::ToggleFullscreen(_mode) => {}
-            Message::BoxHovered(link_url, id) => {
-                self.screen = Screen::Files(id, link_url.clone());
-                self.display_bar_content = link_url.path().to_owned();
+            Message::Edit(action) => {
+                println!("{:#?}", action);
+                self.content.perform(action);
             }
 
-            Message::OpenLink(link_url) => {
-                self.screen = Screen::Files("".to_string(), link_url.clone());
-                self.display_bar_content = link_url.path().to_owned();
+            Message::Error(error) => {
+                self.screen = Screen::ErrorDislay(error);
+            }
+
+            Message::OpenFile(file_path) => {
+                let content = match fs::file_content(file_path.clone()) {
+                    Ok(content) => content,
+                    Err(err) => {
+                        self.screen = Screen::ErrorDislay(err.to_string());
+                        return;
+                    }
+                };
+
+                self.content = text_editor::Content::with_text(&content);
+                self.screen = Screen::FileDisplay(file_path);
+            }
+            Message::BoxHovered(file_path, id) => {
+                self.screen = Screen::Files(id, file_path.clone());
+                self.display_bar_content = fs::path_to_string(&file_path);
+            }
+
+            Message::OpenLink(link_path) => {
+                self.screen = Screen::Files("".to_string(), link_path.clone());
+                self.display_bar_content = fs::path_to_string(&link_path);
             }
 
             Message::DisplayBarContentChanged(content) => {
@@ -85,14 +117,13 @@ impl Window {
             }
 
             Message::DisplayBarContentSubmitted => {
-                if let Ok(url) = url::Url::from_directory_path(&self.display_bar_content) {
-                    self.screen = Screen::Files("".to_string(), url);
-                }
+                self.screen =
+                    Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
             }
 
-            Message::BoxClicked(url) => {
-                self.screen = Screen::Files("".to_string(), url.clone());
-                self.display_bar_content = url.path().to_owned();
+            Message::BoxClicked(file_path) => {
+                self.screen = Screen::Files("".to_string(), file_path.clone());
+                self.display_bar_content = fs::path_to_string(&file_path);
             }
 
             Message::WindowEvent(event) => {
@@ -150,9 +181,23 @@ impl Window {
         let screen = match &self.screen {
             Screen::Welcome => self.full_window(welcome_content()),
             Screen::Files(box_id, path) => self.files_content(box_id.to_string(), path),
+            Screen::FileDisplay(file_url) => self.display_file(file_url),
+            Screen::ErrorDislay(error) => {
+                error_display(error.clone(), self.display_bar_content.clone())
+            }
         };
 
         screen
+    }
+
+    fn display_file(&self, _: &PathBuf) -> Element<Message> {
+        column![
+            display_bar(self.display_bar_content.clone()),
+            text_editor(&self.content)
+                .placeholder("Loading file...")
+                .on_action(Message::Edit)
+        ]
+        .into()
     }
 
     fn full_window<'a>(&self, element: Element<'a, Message>) -> Element<'a, Message> {
@@ -161,10 +206,10 @@ impl Window {
             .into()
     }
 
-    fn files_content(&self, id: String, path: &url::Url) -> Element<Message> {
+    fn files_content(&self, id: String, path: &PathBuf) -> Element<Message> {
         column![
             display_bar(self.display_bar_content.clone()),
-            directory_information(id, PathBuf::from(path.path()))
+            directory_information(id, PathBuf::from(path))
         ]
         .into()
     }
