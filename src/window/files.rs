@@ -219,9 +219,7 @@ impl Window {
     fn display_file(&self, _: &PathBuf) -> Element<Message> {
         column![
             display_bar(self.display_bar_content.clone()),
-            text_editor(&self.content)
-                .placeholder("Loading file...")
-                .on_action(Message::Edit)
+            text_editor(&self.content).on_action(Message::Edit)
         ]
         .into()
     }
