@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
+use iced::mouse::ScrollDelta;
 use iced::widget::{column, text_editor};
 use iced::{Element, Task, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
-use crate::fs::file;
+use crate::fs::file::{self, Directory};
 use crate::ui::display_bar::display_bar;
 use crate::ui::error_page::error_display;
 use crate::ui::info::directory_information;
@@ -15,6 +16,7 @@ pub struct Window {
     screen: Screen,
     display_bar_content: String,
     content: text_editor::Content,
+    directory_content: Option<Directory>,
 }
 
 #[derive(Debug, Clone)]
@@ -25,11 +27,12 @@ pub enum Message {
     DisplayBarContentChanged(String),
     DisplayBarContentSubmitted,
     BoxClicked(PathBuf),
-    WindowEvent(iced::Event),
+    Event(iced::Event),
     BoxHovered(PathBuf, String),
     Edit(text_editor::Action),
     OpenFile(PathBuf),
     Error(String),
+    BoxScroll(ScrollDelta),
 }
 
 #[derive(Debug, Clone)]
@@ -64,16 +67,18 @@ impl Window {
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
-        iced::event::listen().map(Message::WindowEvent)
+        iced::event::listen().map(Message::Event)
     }
 
     pub fn new() -> (Self, Task<Message>) {
         let mut content = text_editor::Content::new();
         let conf = conf::Config::new();
+        let mut directory_content = None;
         let screen = match conf.get_last_path() {
             Some(path) => {
                 let path = PathBuf::from(path);
                 if path.is_dir() {
+                    directory_content = Some(file::directory_content(path.clone()).unwrap());
                     Screen::Files("".to_string(), path)
                 } else {
                     let file_content = match file::file_content(path.clone()) {
@@ -84,6 +89,7 @@ impl Window {
                                     screen: Screen::ErrorDislay(err.to_string()),
                                     display_bar_content: path.to_string_lossy().to_string(),
                                     content,
+                                    directory_content: None,
                                 },
                                 Task::none(),
                             );
@@ -100,6 +106,7 @@ impl Window {
                 screen,
                 display_bar_content: String::new(),
                 content,
+                directory_content,
             },
             Task::none(),
         )
@@ -110,6 +117,11 @@ impl Window {
             Message::ToggleFullscreen(_mode) => Task::none(),
             Message::Edit(action) => {
                 self.content.perform(action);
+                Task::none()
+            }
+
+            Message::BoxScroll(scroll) => {
+                println!("box delta: {scroll:#?}");
                 Task::none()
             }
 
@@ -132,9 +144,9 @@ impl Window {
                 self.display_bar_content = file::path_to_string(&file_path);
                 Task::none()
             }
-            Message::BoxHovered(file_path, id) => {
-                self.screen = Screen::Files(id, file_path.clone());
-                self.display_bar_content = file::path_to_string(&file_path);
+            Message::BoxHovered(_file_path, _id) => {
+                // self.screen = Screen::Files(id, file_path.clone());
+                //self.display_bar_content = file::path_to_string(&file_path);
                 Task::none()
             }
 
@@ -152,21 +164,25 @@ impl Window {
             Message::DisplayBarContentSubmitted => {
                 self.screen =
                     Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
+                self.directory_content = Some(
+                    file::directory_content(PathBuf::from(&self.display_bar_content)).unwrap(),
+                );
                 Task::none()
             }
 
             Message::BoxClicked(file_path) => {
                 self.screen = Screen::Files("".to_string(), file_path.clone());
                 self.display_bar_content = file::path_to_string(&file_path);
+                self.directory_content = Some(file::directory_content(file_path).unwrap());
                 Task::none()
             }
 
-            Message::WindowEvent(event) => {
-                let window_event = match event {
-                    iced::Event::Window(window_event) => window_event,
-                    _ => return Task::none(),
-                };
-                let x: Task<Message> = match window_event {
+            Message::Event(event) => match event {
+                iced::Event::Mouse(mouse_event) => {
+                    println!("{mouse_event:#?}");
+                    Task::none()
+                }
+                iced::Event::Window(window_event) => match window_event {
                     iced::window::Event::Opened { position: _, size } => {
                         let mut width = crate::config::conf::ColumnWidth::default();
                         width.name = (size.width / 3.0) - 50.0;
@@ -194,10 +210,9 @@ impl Window {
                         window::get_latest().and_then(window::close)
                     }
                     _ => Task::none(),
-                };
-
-                x
-            }
+                },
+                _ => Task::none(),
+            },
 
             Message::ButtonPressed(_action) => Task::none(),
         }
@@ -206,7 +221,7 @@ impl Window {
     pub fn view(&self) -> iced::Element<Message> {
         let screen = match &self.screen {
             Screen::Welcome => self.full_window(welcome_content()),
-            Screen::Files(box_id, path) => self.files_content(box_id.to_string(), path),
+            Screen::Files(_box_id, _path) => self.files_content(),
             Screen::FileDisplay(file_url) => self.display_file(file_url),
             Screen::ErrorDislay(error) => {
                 error_display(error.clone(), self.display_bar_content.clone())
@@ -230,10 +245,10 @@ impl Window {
             .into()
     }
 
-    fn files_content(&self, id: String, path: &PathBuf) -> Element<Message> {
+    fn files_content(&self) -> Element<Message> {
         column![
             display_bar(self.display_bar_content.clone()),
-            directory_information(id, PathBuf::from(path))
+            directory_information(self.directory_content.as_ref().unwrap())
         ]
         .into()
     }

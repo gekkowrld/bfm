@@ -1,6 +1,7 @@
 use human_repr::HumanCount;
 use iced::Length;
 use iced::Theme;
+use iced::mouse::ScrollDelta;
 use iced::widget::container;
 use iced::widget::mouse_area;
 use iced::widget::row;
@@ -13,7 +14,7 @@ use crate::window::files::Message;
 
 pub fn box_display<'a>(
     box_style: fn(&Theme) -> container::Style,
-    file_info: File,
+    file_info: &File,
 ) -> iced::Element<'a, Message> {
     let config = Config::new().get_column_width();
 
@@ -27,7 +28,7 @@ pub fn box_display<'a>(
             row![
                 icon(file_info.path.is_dir()),
                 text!("{file_name}").width(Length::Fixed(config.name)),
-                text!("{}", file_type(&file_info)).width(Length::Fixed(config.type_)),
+                text!("{}", file_type(file_info)).width(Length::Fixed(config.type_)),
                 text!(
                     "{}",
                     file_info.file.metadata().unwrap().len().human_count_bytes()
@@ -46,12 +47,13 @@ pub fn box_display<'a>(
     })
     .on_enter(Message::BoxHovered(
         file_info.path.clone().parent().unwrap().to_path_buf(),
-        file_info.id,
+        file_info.id.clone(),
     ))
     .on_exit(Message::BoxHovered(
         file_info.path.parent().unwrap().to_path_buf(),
         "".to_string(),
     ))
+    .on_scroll(scroll_delta)
     .interaction(iced::mouse::Interaction::Pointer)
     .into()
 }
@@ -62,4 +64,9 @@ fn file_type(file_info: &File) -> String {
     } else {
         "File".to_string()
     }
+}
+
+pub fn scroll_delta(delta: ScrollDelta) -> Message {
+    // TODO: Implement scrolling
+    Message::BoxScroll(delta)
 }

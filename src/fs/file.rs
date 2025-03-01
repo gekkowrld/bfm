@@ -1,6 +1,6 @@
 use std::fs::DirEntry;
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use url::Url;
 
 #[derive(Debug)]
 pub struct File {
@@ -14,23 +14,35 @@ impl File {
         let file = std::fs::File::open(&path)?;
         Ok(File { id, path, file })
     }
+
+    pub fn file_content(&mut self) -> Result<String, std::io::Error> {
+        extract_content(&self.file)
+    }
 }
 
-pub fn file_content(path: PathBuf) -> Result<String, std::io::Error> {
-    std::fs::read_to_string(path)
+pub fn file_content(file_path: PathBuf) -> Result<String, std::io::Error> {
+    let file = std::fs::File::open(&file_path)?;
+    extract_content(&file)
+}
+
+fn extract_content(file: &std::fs::File) -> Result<String, std::io::Error> {
+    let mut contents = String::new();
+    let mut buf_reader = BufReader::new(file);
+    buf_reader.read_to_string(&mut contents)?;
+    Ok(contents)
 }
 
 #[derive(Debug)]
 pub struct Directory {
     pub files: Vec<File>,
-    pub path: Url,
+    pub path: PathBuf,
 }
 
 impl Directory {
-    pub fn new(path: &PathBuf) -> Directory {
+    pub fn new(path: &Path) -> Directory {
         Directory {
             files: Vec::new(),
-            path: Url::from_file_path(path).unwrap(),
+            path: path.to_path_buf(),
         }
     }
 
@@ -43,11 +55,10 @@ impl Directory {
     }
 }
 
-pub fn directory_content(directory: PathBuf) -> Directory {
+pub fn directory_content(directory: PathBuf) -> std::io::Result<Directory> {
     let mut dir = Directory::new(&directory);
-    let entries = std::fs::read_dir(directory).unwrap();
-    for entry in entries {
-        let entry = entry.unwrap();
+    for entry in std::fs::read_dir(directory)? {
+        let entry = entry?;
         let path = entry.path();
         let _file = File::new(file_id(&entry), path.clone());
 
@@ -60,7 +71,7 @@ pub fn directory_content(directory: PathBuf) -> Directory {
         };
         dir.add_file(file);
     }
-    dir
+    Ok(dir)
 }
 
 fn file_id(file_info: &DirEntry) -> String {
