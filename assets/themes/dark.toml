@@ -14,3 +14,5 @@ border_width = 2
 border_width_selected = 2
 border_radius = 0
 border_radius_selected = 1
+icon_color = "#d4d4d4"
+icon_color_selected = "#d4d4d4"

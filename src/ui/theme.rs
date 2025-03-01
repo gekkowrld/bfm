@@ -30,11 +30,21 @@ pub struct FileColumn {
     pub border_width_selected: f32,
     pub border_radius: f32,
     pub border_radius_selected: f32,
+    pub icon_color: String,
+    pub icon_color_selected: String,
 }
 
 pub struct DisplayTheme {
     pub row_style: fn(&Theme) -> Style,
     pub row_style_hovered: fn(&Theme) -> Style,
+    pub icon_color: Color,
+    pub icon_color_selected: Color,
+}
+
+impl Default for DisplayTheme {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DisplayTheme {
@@ -42,6 +52,8 @@ impl DisplayTheme {
         Self {
             row_style: Self::row_style,
             row_style_hovered: Self::row_style_selected,
+            icon_color: Self::icon_color(),
+            icon_color_selected: Self::icon_color_selected(),
         }
     }
 
@@ -77,6 +89,22 @@ impl DisplayTheme {
             },
             shadow: Shadow::default(),
         }
+    }
+
+    pub fn icon_color() -> Color {
+        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let config: T = toml::from_str(&theme_string).unwrap();
+        let fc = config.colors.file_column;
+
+        hex_to_color(fc.icon_color)
+    }
+
+    pub fn icon_color_selected() -> Color {
+        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let config: T = toml::from_str(&theme_string).unwrap();
+        let fc = config.colors.file_column;
+
+        hex_to_color(fc.icon_color_selected)
     }
 
     fn get_theme(key: &str) -> Vec<u8> {

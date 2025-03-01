@@ -8,6 +8,7 @@ authors = ["Gordon Onayo <gekkowrld@gmail.com"]
 dirs = "6.0.0"
 human-repr = "1.1.0"
 iced = { version = "0.13.1", features = ["advanced", "svg"] }
+rayon = "1.10.0"
 rust-embed = { version = "8.6.0", features = ["include-exclude"] }
 serde = "1.0.218"
 toml = "0.8.20"

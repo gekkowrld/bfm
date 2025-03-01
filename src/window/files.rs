@@ -3,13 +3,14 @@ use std::path::PathBuf;
 use iced::widget::{
     Column, MouseArea, column, container, mouse_area, row, scrollable, text, text_editor,
 };
-use iced::{Element, Task, Theme, window};
+use iced::{Color, Element, Task, Theme, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
 use crate::fs::file::{self, Directory};
 use crate::ui::display_bar::display_bar;
 use crate::ui::error_page::error_display;
+use crate::ui::file_icon::icon;
 use crate::ui::info::directory_information;
 use crate::ui::theme::DisplayTheme;
 use crate::ui::welcome::welcome_content;
@@ -294,10 +295,10 @@ impl Window {
     fn render_file_rows(&self, rows: Vec<FileColumn>) -> Column<Message> {
         let rendered_rows = match &self.hovering_box {
             Some(id) => self.render_rows_check(id),
-            None => column(
-                rows.iter()
-                    .map(|row| self.render_row(row, iced::widget::container::dark).into()),
-            ),
+            None => column(rows.iter().map(|row| {
+                self.render_row(row, self.config.row_style, self.config.icon_color)
+                    .into()
+            })),
         };
 
         rendered_rows.spacing(10)
@@ -312,9 +313,15 @@ impl Window {
                 .iter()
                 .map(|row| {
                     if row.id == *id {
-                        self.render_row(row, self.config.row_style_hovered).into()
+                        self.render_row(
+                            row,
+                            self.config.row_style_hovered,
+                            self.config.icon_color_selected,
+                        )
+                        .into()
                     } else {
-                        self.render_row(row, self.config.row_style).into()
+                        self.render_row(row, self.config.row_style, self.config.icon_color)
+                            .into()
                     }
                 }),
         )
@@ -324,12 +331,13 @@ impl Window {
         &self,
         row: &FileColumn,
         box_style: fn(&Theme) -> container::Style,
+        icon_color: Color,
     ) -> MouseArea<Message> {
         let config = conf::Config::new().get_column_width();
         mouse_area(
             container(
                 row![
-                    //icon(file_info.path.is_dir()),
+                    icon(row.information.path.is_dir(), icon_color),
                     text!("{}", row.information.filename).width(Length::Fixed(config.name)),
                     text!("{}", row.information.file_type).width(Length::Fixed(config.size)),
                     text!("{}", row.information.file_size).width(Length::Fixed(config.type_)),

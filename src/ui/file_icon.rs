@@ -1,5 +1,5 @@
 use crate::window::files::Message;
-use iced::color;
+use iced::Color;
 use iced::{Element, Length, widget::svg};
 use rust_embed::RustEmbed;
 
@@ -9,16 +9,14 @@ use rust_embed::RustEmbed;
 #[include = "themes/*.toml"]
 pub struct Assets;
 
-pub fn icon<'a>(is_dir: bool) -> Element<'a, Message> {
+pub fn icon<'a>(is_dir: bool, color: Color) -> Element<'a, Message> {
     svg(svg::Handle::from_memory(get_icon(if is_dir {
         "dir"
     } else {
         "file"
     })))
     .width(Length::Fill)
-    .style(|_, _| svg::Style {
-        color: Some(color!(0x83a300)),
-    })
+    .style(move |_, _| svg::Style { color: Some(color) })
     .into()
 }
 

@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::fs::DirEntry;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
@@ -57,20 +58,27 @@ impl Directory {
 
 pub fn directory_content(directory: PathBuf) -> std::io::Result<Directory> {
     let mut dir = Directory::new(&directory);
-    for entry in std::fs::read_dir(directory)? {
-        let entry = entry?;
-        let path = entry.path();
-        let _file = File::new(file_id(&entry), path.clone());
 
-        let file = match _file {
-            Ok(file) => file,
-            Err(err) => {
-                eprintln!("Error: {} On File {:#?}", err, path);
-                continue;
+    let entries = std::fs::read_dir(directory)?
+        .filter_map(Result::ok)
+        .collect::<Vec<_>>();
+
+    let files: Vec<File> = entries
+        .par_iter()
+        .filter_map(|entry| {
+            let path = entry.path();
+            let file_result = File::new(file_id(entry), path.clone());
+            match file_result {
+                Ok(file) => Some(file),
+                Err(err) => {
+                    eprintln!("Error: {} On File {:#?}", err, path);
+                    None
+                }
             }
-        };
-        dir.add_file(file);
-    }
+        })
+        .collect();
+
+    dir.files = files;
     Ok(dir)
 }
 
