@@ -1,12 +1,18 @@
 use crate::window::files::Message;
 use iced::color;
 use iced::{Element, Length, widget::svg};
+use rust_embed::RustEmbed;
+
+#[derive(RustEmbed)]
+#[folder = "assets"]
+#[include = "icons/*.svg"]
+pub struct Assets;
 
 pub fn icon<'a>(is_dir: bool) -> Element<'a, Message> {
     svg(svg::Handle::from_memory(get_icon(if is_dir {
-        "directory".to_string()
+        "dir"
     } else {
-        "file".to_string()
+        "file"
     })))
     .width(Length::Fill)
     .style(|_, _| svg::Style {
@@ -15,10 +21,9 @@ pub fn icon<'a>(is_dir: bool) -> Element<'a, Message> {
     .into()
 }
 
-fn get_icon(key: String) -> &'static [u8] {
-    match key.as_str() {
-        "file" => include_bytes!("../../icons/file.svg"),
-        "directory" => include_bytes!("../../icons/dir.svg"),
-        _ => include_bytes!("../../icons/file.svg"),
-    }
+fn get_icon(key: &str) -> Vec<u8> {
+    Assets::get(format!("icons/{key}.svg").as_str())
+        .unwrap()
+        .data
+        .into_owned()
 }

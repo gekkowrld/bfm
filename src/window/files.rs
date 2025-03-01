@@ -169,7 +169,7 @@ impl Window {
                 let x: Task<Message> = match window_event {
                     iced::window::Event::Opened { position: _, size } => {
                         let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = size.width / 3.0;
+                        width.name = (size.width / 3.0) - 50.0;
                         width.size = size.width / 3.0;
                         width.type_ = size.width / 3.0;
                         conf::Config::new().set_column_width(&width);
@@ -177,7 +177,7 @@ impl Window {
                     }
                     iced::window::Event::Resized(size) => {
                         let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = (size.width / 3.0) - 20.0;
+                        width.name = (size.width / 3.0) - 50.0;
                         width.size = size.width / 3.0;
                         width.type_ = size.width / 3.0;
                         conf::Config::new().set_column_width(&width);

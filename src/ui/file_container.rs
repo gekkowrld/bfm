@@ -1,3 +1,4 @@
+use human_repr::HumanCount;
 use iced::Length;
 use iced::Theme;
 use iced::widget::container;
@@ -27,8 +28,11 @@ pub fn box_display<'a>(
                 icon(file_info.path.is_dir()),
                 text!("{file_name}").width(Length::Fixed(config.name)),
                 text!("{}", file_type(&file_info)).width(Length::Fixed(config.type_)),
-                text!("{}", file_info.file.metadata().unwrap().len().to_string())
-                    .width(Length::Fixed(config.type_)),
+                text!(
+                    "{}",
+                    file_info.file.metadata().unwrap().len().human_count_bytes()
+                )
+                .width(Length::Fixed(config.type_)),
             ]
             .padding(10)
             .width(Length::Fill),
