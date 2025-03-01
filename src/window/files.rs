@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
-use iced::widget::{column, text_editor};
-use iced::{Element, Task, window};
+use iced::widget::{
+    Column, MouseArea, column, container, mouse_area, row, scrollable, text, text_editor,
+};
+use iced::{Element, Task, Theme, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
@@ -16,6 +18,31 @@ pub struct Window {
     display_bar_content: String,
     content: text_editor::Content,
     directory_content: Option<Directory>,
+    hovering_box: Option<String>,
+    files_display_tree: Option<FilesUITree>,
+}
+
+// This is the high level UI tree for faster
+// changes
+#[derive(Debug, Clone)]
+pub struct FilesUITree {
+    // The vector of columns
+    pub id: String,
+    pub files_container: Vec<FileColumn>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileColumn {
+    pub id: String,
+    pub information: FileColumnInformation,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileColumnInformation {
+    pub filename: String,
+    pub file_type: String,
+    pub file_size: String,
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -72,11 +99,14 @@ impl Window {
         let mut content = text_editor::Content::new();
         let conf = conf::Config::new();
         let mut directory_content = None;
+        let mut files_display_tree = None;
         let screen = match conf.get_last_path() {
             Some(path) => {
                 let path = PathBuf::from(path);
                 if path.is_dir() {
                     directory_content = Some(file::directory_content(path.clone()).unwrap());
+                    files_display_tree =
+                        Some(directory_information(directory_content.as_ref().unwrap()));
                     Screen::Files("".to_string(), path)
                 } else {
                     let file_content = match file::file_content(path.clone()) {
@@ -88,6 +118,8 @@ impl Window {
                                     display_bar_content: path.to_string_lossy().to_string(),
                                     content,
                                     directory_content: None,
+                                    hovering_box: None,
+                                    files_display_tree: None,
                                 },
                                 Task::none(),
                             );
@@ -105,6 +137,8 @@ impl Window {
                 display_bar_content: String::new(),
                 content,
                 directory_content,
+                hovering_box: None,
+                files_display_tree,
             },
             Task::none(),
         )
@@ -137,9 +171,10 @@ impl Window {
                 self.display_bar_content = file::path_to_string(&file_path);
                 Task::none()
             }
-            Message::BoxHovered(_file_path, _id) => {
-                // self.screen = Screen::Files(id, file_path.clone());
-                //self.display_bar_content = file::path_to_string(&file_path);
+            Message::BoxHovered(file_path, id) => {
+                self.hovering_box = Some(id.clone());
+                self.display_bar_content = file::path_to_string(&file_path);
+                self.screen = Screen::Files(id, file_path.clone());
                 Task::none()
             }
 
@@ -160,6 +195,9 @@ impl Window {
                 self.directory_content = Some(
                     file::directory_content(PathBuf::from(&self.display_bar_content)).unwrap(),
                 );
+                self.files_display_tree = Some(directory_information(
+                    self.directory_content.as_ref().unwrap(),
+                ));
                 Task::none()
             }
 
@@ -167,6 +205,9 @@ impl Window {
                 self.screen = Screen::Files("".to_string(), file_path.clone());
                 self.display_bar_content = file::path_to_string(&file_path);
                 self.directory_content = Some(file::directory_content(file_path).unwrap());
+                self.files_display_tree = Some(directory_information(
+                    self.directory_content.as_ref().unwrap(),
+                ));
                 Task::none()
             }
 
@@ -237,8 +278,75 @@ impl Window {
     fn files_content(&self) -> Element<Message> {
         column![
             display_bar(self.display_bar_content.clone()),
-            directory_information(self.directory_content.as_ref().unwrap())
+            self.tree_render(self.files_display_tree.as_ref().unwrap().clone()),
         ]
         .into()
+    }
+
+    fn tree_render(&self, tree: FilesUITree) -> Element<Message> {
+        scrollable(self.render_file_rows(tree.files_container)).into()
+    }
+
+    fn render_file_rows(&self, rows: Vec<FileColumn>) -> Column<Message> {
+        match &self.hovering_box {
+            Some(id) => self.render_rows_check(id),
+            None => column(
+                rows.iter()
+                    .map(|row| self.render_row(row, iced::widget::container::dark).into()),
+            ),
+        }
+    }
+
+    fn render_rows_check(&self, id: &String) -> Column<Message> {
+        column(
+            self.files_display_tree
+                .as_ref()
+                .unwrap()
+                .files_container
+                .iter()
+                .map(|row| {
+                    if row.id == *id {
+                        self.render_row(row, iced::widget::container::bordered_box)
+                            .into()
+                    } else {
+                        self.render_row(row, iced::widget::container::dark).into()
+                    }
+                }),
+        )
+    }
+
+    fn render_row(
+        &self,
+        row: &FileColumn,
+        box_style: fn(&Theme) -> container::Style,
+    ) -> MouseArea<Message> {
+        let config = conf::Config::new().get_column_width();
+        mouse_area(
+            container(
+                row![
+                    //icon(file_info.path.is_dir()),
+                    text!("{}", row.information.filename).width(Length::Fixed(config.name)),
+                    text!("{}", row.information.file_type).width(Length::Fixed(config.size)),
+                    text!("{}", row.information.file_size).width(Length::Fixed(config.type_)),
+                ]
+                .padding(10)
+                .width(Length::Fill),
+            )
+            .style(box_style),
+        )
+        .on_press(if row.information.path.is_dir() {
+            Message::BoxClicked(row.information.path.clone())
+        } else {
+            Message::OpenFile(row.information.path.clone())
+        })
+        .on_enter(Message::BoxHovered(
+            row.information.path.clone().parent().unwrap().to_path_buf(),
+            row.id.clone(),
+        ))
+        .on_exit(Message::BoxHovered(
+            row.information.path.parent().unwrap().to_path_buf(),
+            "".to_string(),
+        ))
+        .interaction(iced::mouse::Interaction::Pointer)
     }
 }

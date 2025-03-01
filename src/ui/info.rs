@@ -1,27 +1,18 @@
-use crate::config::conf::Config;
 use crate::fs::file::Directory;
 use crate::ui::file_container::box_display;
-use iced::widget::{Column, column, row, scrollable};
-use iced::widget::{rich_text, span};
-use iced::{Element, Length};
+use crate::window::files::{FileColumn, FilesUITree};
 
-pub fn directory_information(
-    directory: &Directory,
-) -> Element<'static, crate::window::files::Message> {
-    let config = Config::new().get_column_width();
+pub fn directory_information(directory: &Directory) -> FilesUITree {
+    let children = directory.files.iter().map(box_display);
 
-    let header = Column::new().push(row![
-        rich_text![span("Name").size(50)].width(Length::Fixed(config.name)),
-        rich_text![span("Type").size(50)].width(Length::Fixed(config.type_)),
-        rich_text![span("Size").size(50)].width(Length::Fixed(config.size)),
-    ]);
+    let mut children_info: Vec<FileColumn> = Vec::new();
 
-    let children = column(
-        directory
-            .files
-            .iter()
-            .map(|file| box_display(iced::widget::container::bordered_box, file)),
-    );
+    for child in children {
+        children_info.push(child);
+    }
 
-    scrollable(column![header, children].spacing(12)).into()
+    FilesUITree {
+        id: directory.path.to_str().unwrap().to_string(),
+        files_container: children_info,
+    }
 }
