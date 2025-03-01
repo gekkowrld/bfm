@@ -88,3 +88,54 @@ impl Default for Config {
         Self::default_config()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = Config::default_config();
+        assert_eq!(config.column_width.name, 50.0);
+        assert_eq!(config.column_width.type_, 50.0);
+        assert_eq!(config.column_width.size, 50.0);
+        assert_eq!(config.last_path, None);
+    }
+
+    #[test]
+    fn test_set_column_width() {
+        let mut config = Config::default_config();
+        let width = ColumnWidth {
+            name: 100.0,
+            type_: 100.0,
+            size: 100.0,
+        };
+        config.set_column_width(&width);
+        assert_eq!(config.column_width.name, 100.0);
+        assert_eq!(config.column_width.type_, 100.0);
+        assert_eq!(config.column_width.size, 100.0);
+    }
+
+    #[test]
+    fn test_set_last_path() {
+        let mut config = Config::default_config();
+        config.set_last_path("/home/user");
+        assert_eq!(config.last_path, Some("/home/user".to_string()));
+    }
+
+    #[test]
+    fn test_get_column_width() {
+        let config = Config::default_config();
+        let width = config.get_column_width();
+        assert_eq!(width.name, 50.0);
+        assert_eq!(width.type_, 50.0);
+        assert_eq!(width.size, 50.0);
+    }
+
+    #[test]
+    fn test_get_last_path() {
+        let config = Config::default_config();
+        let path = config.get_last_path();
+        assert_eq!(path, None);
+    }
+}

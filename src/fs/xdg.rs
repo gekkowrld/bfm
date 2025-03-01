@@ -18,3 +18,23 @@ pub fn config_file() -> Option<PathBuf> {
         p
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_home() {
+        assert!(home().is_some());
+    }
+
+    #[test]
+    fn test_config_dir() {
+        assert!(config_dir().is_some());
+    }
+
+    #[test]
+    fn test_config_file() {
+        assert!(config_file().is_some());
+    }
+}

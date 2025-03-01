@@ -81,3 +81,34 @@ fn file_id(file_info: &DirEntry) -> String {
 pub fn path_to_string(path: &Path) -> String {
     path.to_str().unwrap().to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File as StdFile;
+    use std::io::Write;
+
+    fn create_temp_file(content: &str) {
+        // Create temp dir
+        let _ = std::fs::create_dir_all("/tmp/test_files");
+        let file_path = PathBuf::from("/tmp/test_files/test.txt");
+        let mut file = StdFile::create(&file_path).unwrap();
+        file.write_all(content.as_bytes()).unwrap();
+    }
+
+    #[test]
+    fn test_file_content() {
+        let file_path = PathBuf::from("/tmp/test_files/test.txt");
+        create_temp_file("Hello, World!");
+        let content = file_content(file_path).unwrap();
+        assert_eq!(content, "Hello, World!");
+    }
+
+    #[test]
+    fn test_directory_content() {
+        let dir_path = PathBuf::from("/tmp/test_files");
+        let dir = directory_content(dir_path).unwrap();
+        assert_eq!(dir.files().len(), 1);
+        assert_eq!(dir.files()[0].id, "test.txt");
+    }
+}

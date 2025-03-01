@@ -27,3 +27,14 @@ fn get_icon(key: &str) -> Vec<u8> {
         .data
         .into_owned()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_icon() {
+        let icon = get_icon("dir");
+        assert_eq!(icon.len(), 303);
+    }
+}
