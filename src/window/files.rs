@@ -11,6 +11,7 @@ use crate::fs::file::{self, Directory};
 use crate::ui::display_bar::display_bar;
 use crate::ui::error_page::error_display;
 use crate::ui::info::directory_information;
+use crate::ui::theme::DisplayTheme;
 use crate::ui::welcome::welcome_content;
 
 pub struct Window {
@@ -20,6 +21,7 @@ pub struct Window {
     directory_content: Option<Directory>,
     hovering_box: Option<String>,
     files_display_tree: Option<FilesUITree>,
+    config: DisplayTheme,
 }
 
 // This is the high level UI tree for faster
@@ -120,6 +122,7 @@ impl Window {
                                     directory_content: None,
                                     hovering_box: None,
                                     files_display_tree: None,
+                                    config: DisplayTheme::new(),
                                 },
                                 Task::none(),
                             );
@@ -139,6 +142,7 @@ impl Window {
                 directory_content,
                 hovering_box: None,
                 files_display_tree,
+                config: DisplayTheme::new(),
             },
             Task::none(),
         )
@@ -288,13 +292,15 @@ impl Window {
     }
 
     fn render_file_rows(&self, rows: Vec<FileColumn>) -> Column<Message> {
-        match &self.hovering_box {
+        let rendered_rows = match &self.hovering_box {
             Some(id) => self.render_rows_check(id),
             None => column(
                 rows.iter()
                     .map(|row| self.render_row(row, iced::widget::container::dark).into()),
             ),
-        }
+        };
+
+        rendered_rows.spacing(10)
     }
 
     fn render_rows_check(&self, id: &String) -> Column<Message> {
@@ -306,10 +312,9 @@ impl Window {
                 .iter()
                 .map(|row| {
                     if row.id == *id {
-                        self.render_row(row, iced::widget::container::bordered_box)
-                            .into()
+                        self.render_row(row, self.config.row_style_hovered).into()
                     } else {
-                        self.render_row(row, iced::widget::container::dark).into()
+                        self.render_row(row, self.config.row_style).into()
                     }
                 }),
         )

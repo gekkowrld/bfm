@@ -6,6 +6,7 @@ use rust_embed::RustEmbed;
 #[derive(RustEmbed)]
 #[folder = "assets"]
 #[include = "icons/*.svg"]
+#[include = "themes/*.toml"]
 pub struct Assets;
 
 pub fn icon<'a>(is_dir: bool) -> Element<'a, Message> {

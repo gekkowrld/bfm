@@ -1,0 +1,16 @@
+name = "Dark Mode"
+description = "A dark theme for bfm"
+version = "0.0.1"
+
+[colors]
+[colors.file_column]
+background = "#1e1e1e"
+foreground = "#d4d4d4"
+border = "#1e1e1e"
+border_selected = "#1e1e1e"
+background_selected = "#3a3a3a"
+foreground_selected = "#d4d4d4"
+border_width = 2
+border_width_selected = 2
+border_radius = 0
+border_radius_selected = 1
