@@ -1,7 +1,6 @@
 use human_repr::HumanCount;
 use iced::Length;
 use iced::Theme;
-use iced::mouse::ScrollDelta;
 use iced::widget::container;
 use iced::widget::mouse_area;
 use iced::widget::row;
@@ -53,7 +52,6 @@ pub fn box_display<'a>(
         file_info.path.parent().unwrap().to_path_buf(),
         "".to_string(),
     ))
-    .on_scroll(scroll_delta)
     .interaction(iced::mouse::Interaction::Pointer)
     .into()
 }
@@ -64,9 +62,4 @@ fn file_type(file_info: &File) -> String {
     } else {
         "File".to_string()
     }
-}
-
-pub fn scroll_delta(delta: ScrollDelta) -> Message {
-    // TODO: Implement scrolling
-    Message::BoxScroll(delta)
 }

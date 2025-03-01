@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use iced::mouse::ScrollDelta;
 use iced::widget::{column, text_editor};
 use iced::{Element, Task, window};
 use iced::{Length, Subscription};
@@ -32,7 +31,6 @@ pub enum Message {
     Edit(text_editor::Action),
     OpenFile(PathBuf),
     Error(String),
-    BoxScroll(ScrollDelta),
 }
 
 #[derive(Debug, Clone)]
@@ -120,11 +118,6 @@ impl Window {
                 Task::none()
             }
 
-            Message::BoxScroll(scroll) => {
-                println!("box delta: {scroll:#?}");
-                Task::none()
-            }
-
             Message::Error(error) => {
                 self.screen = Screen::ErrorDislay(error);
                 Task::none()
@@ -178,10 +171,6 @@ impl Window {
             }
 
             Message::Event(event) => match event {
-                iced::Event::Mouse(mouse_event) => {
-                    println!("{mouse_event:#?}");
-                    Task::none()
-                }
                 iced::Event::Window(window_event) => match window_event {
                     iced::window::Event::Opened { position: _, size } => {
                         let mut width = crate::config::conf::ColumnWidth::default();
