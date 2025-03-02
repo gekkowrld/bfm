@@ -48,6 +48,7 @@ pub struct FileColumnInformation {
     pub filename: String,
     pub file_type: String,
     pub file_size: String,
+    pub modified: String,
     pub path: PathBuf,
 }
 
@@ -249,9 +250,10 @@ impl Window {
 
     fn calculate_sizes(&mut self, size: Size<f32>) {
         let mut width = crate::config::conf::ColumnWidth::default();
-        width.name = (size.width / 3.0) - 50.0;
-        width.size = size.width / 3.0;
-        width.type_ = size.width / 3.0;
+        width.name = (size.width / 4.0) - 50.0;
+        width.size = size.width / 4.0;
+        width.type_ = size.width / 4.0;
+        width.modified = size.width / 4.0;
         conf::Config::new().set_column_width(&width);
     }
 
@@ -323,7 +325,19 @@ impl Window {
     }
 
     fn tree_render(&self, tree: FilesUITree) -> Element<Message> {
-        scrollable(self.render_file_rows(tree.files_container)).into()
+        let config = conf::Config::new().get_column_width();
+        let header_row = row![
+            text!("Name").width(config.name).size(20),
+            text!("Type").width(config.type_).size(20),
+            text!("Size").width(config.size).size(20),
+            text!("Modified").width(config.modified).size(20),
+        ];
+
+        scrollable(column![
+            header_row.padding(10).width(Length::Fill),
+            self.render_file_rows(tree.files_container)
+        ])
+        .into()
     }
 
     fn render_file_rows(&self, rows: Vec<FileColumn>) -> Column<Message> {
@@ -375,6 +389,7 @@ impl Window {
                     text!("{}", row.information.filename).width(Length::Fixed(config.name)),
                     text!("{}", row.information.file_type).width(Length::Fixed(config.size)),
                     text!("{}", row.information.file_size).width(Length::Fixed(config.type_)),
+                    text!("{}", row.information.modified).width(Length::Fixed(config.modified)),
                 ]
                 .padding(10)
                 .width(Length::Fill),

@@ -12,6 +12,7 @@ pub struct ColumnWidth {
     pub name: f32,
     pub type_: f32,
     pub size: f32,
+    pub modified: f32,
 }
 
 impl Config {
@@ -49,6 +50,7 @@ impl Config {
                 name: 50.0,
                 type_: 50.0,
                 size: 50.0,
+                modified: 50.0,
             },
             last_path: None,
         }
@@ -59,6 +61,7 @@ impl Config {
             name: width.name,
             type_: width.type_,
             size: width.size,
+            modified: width.modified,
         };
         let config_string = toml::to_string(&self).unwrap();
         std::fs::write(xdg::config_file().unwrap(), config_string).unwrap();
@@ -75,6 +78,7 @@ impl Config {
             name: self.column_width.name,
             type_: self.column_width.type_,
             size: self.column_width.size,
+            modified: self.column_width.modified,
         }
     }
 
@@ -109,11 +113,13 @@ mod tests {
             name: 100.0,
             type_: 100.0,
             size: 100.0,
+            modified: 100.0,
         };
         config.set_column_width(&width);
         assert_eq!(config.column_width.name, 100.0);
         assert_eq!(config.column_width.type_, 100.0);
         assert_eq!(config.column_width.size, 100.0);
+        assert_eq!(config.column_width.modified, 100.0);
     }
 
     #[test]

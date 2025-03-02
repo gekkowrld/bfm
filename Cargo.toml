@@ -11,5 +11,6 @@ iced = { version = "0.13.1", features = ["advanced", "svg"] }
 rayon = "1.10.0"
 rust-embed = { version = "8.6.0", features = ["include-exclude"] }
 serde = "1.0.218"
+timediff = "0.2.3"
 toml = "0.8.20"
 url = "2.5.4"

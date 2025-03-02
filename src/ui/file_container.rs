@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 use crate::fs::file::File;
 use crate::window::files::FileColumn;
 use crate::window::files::FileColumnInformation;
@@ -8,6 +10,14 @@ pub fn box_display(file_info: &File) -> FileColumn {
         Some(name) => name.to_str().unwrap_or("Unnamed File").to_string(),
         None => "Unnamed File".to_string(),
     };
+
+    let diff = timediff::TimeDiff::to_diff_duration(
+        SystemTime::now()
+            .duration_since(file_info.file.metadata.modified().unwrap())
+            .unwrap(),
+    )
+    .parse()
+    .unwrap();
 
     //icon(file_info.path.is_dir());
 
@@ -22,6 +32,7 @@ pub fn box_display(file_info: &File) -> FileColumn {
                 .len()
                 .human_count_bytes()
                 .to_string(),
+            modified: diff,
             path: file_info.path.clone(),
         },
     }
