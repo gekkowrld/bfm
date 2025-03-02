@@ -25,6 +25,7 @@ pub struct Window {
     hovering_box: Option<String>,
     files_display_tree: Option<FilesUITree>,
     config: DisplayTheme,
+    pagination_size: usize,
 }
 
 // This is the high level UI tree for faster
@@ -131,6 +132,7 @@ impl Window {
                                     hovering_box: None,
                                     files_display_tree: None,
                                     config: DisplayTheme::new(),
+                                    pagination_size: 30,
                                 },
                                 Task::none(),
                             );
@@ -151,6 +153,7 @@ impl Window {
                 hovering_box: None,
                 files_display_tree: None,
                 config: DisplayTheme::new(),
+                pagination_size: 30,
             },
             Task::none(),
         )
@@ -261,7 +264,7 @@ impl Window {
         let results = paginate(
             self.directory_content.as_ref().unwrap().files(),
             display_bar.page,
-            10,
+            self.pagination_size,
         );
 
         let files = match results {
@@ -284,7 +287,11 @@ impl Window {
             Screen::ErrorDislay(error) => {
                 error_display(error.clone(), self.display_bar_content.clone())
             }
-            Screen::Blank => text!("This screen has been left blank intentionally!").into(),
+            Screen::Blank => container(text!("This screen has been left blank intentionally!"))
+                .style(self.config.window_decoration)
+                .height(Length::Fill)
+                .width(Length::Fill)
+                .into(),
         };
 
         screen
@@ -305,10 +312,13 @@ impl Window {
     }
 
     fn files_content(&self) -> Element<Message> {
-        column![
+        container(column![
             display_bar(self.display_bar_content.clone()),
             self.tree_render(self.files_display_tree.as_ref().unwrap().clone()),
-        ]
+        ])
+        .style(self.config.window_decoration)
+        .width(Length::Fill)
+        .height(Length::Fill)
         .into()
     }
 

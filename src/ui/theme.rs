@@ -16,6 +16,7 @@ pub struct T {
 #[derive(Deserialize, Serialize)]
 pub struct Colors {
     pub file_column: FileColumn,
+    pub window: Window,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -34,11 +35,17 @@ pub struct FileColumn {
     pub icon_color_selected: String,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct Window {
+    pub background: String,
+}
+
 pub struct DisplayTheme {
     pub row_style: fn(&Theme) -> Style,
     pub row_style_hovered: fn(&Theme) -> Style,
     pub icon_color: Color,
     pub icon_color_selected: Color,
+    pub window_decoration: fn(&Theme) -> Style,
 }
 
 impl Default for DisplayTheme {
@@ -54,6 +61,21 @@ impl DisplayTheme {
             row_style_hovered: Self::row_style_selected,
             icon_color: Self::icon_color(),
             icon_color_selected: Self::icon_color_selected(),
+            window_decoration: Self::window_background,
+        }
+    }
+
+    pub fn window_background(_: &Theme) -> Style {
+        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let config: T = toml::from_str(&theme_string).unwrap();
+        let fc = config.colors.window;
+        let ffc = config.colors.file_column;
+
+        Style {
+            text_color: Some(hex_to_color(ffc.foreground)),
+            background: Some(Background::Color(hex_to_color(fc.background))),
+            border: Border::default(),
+            shadow: Shadow::default(),
         }
     }
 

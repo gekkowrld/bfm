@@ -4,7 +4,7 @@ version = "0.0.1"
 
 [colors]
 [colors.file_column]
-background = "#1e1e1e"
+background = "#2a2a2a"
 foreground = "#d4d4d4"
 border = "#1e1e1e"
 border_selected = "#1e1e1e"
@@ -16,3 +16,5 @@ border_radius = 0
 border_radius_selected = 1
 icon_color = "#d4d4d4"
 icon_color_selected = "#d4d4d4"
+[colors.window]
+background = "#353535"
