@@ -20,7 +20,7 @@ pub fn paginate(
         return Err(PaginationError::InvalidPageSize);
     }
 
-    let total_pages = (items.len() + page_size - 1) / page_size;
+    let total_pages = items.len().div_ceil(page_size);
     if page > total_pages {
         return Err(PaginationError::PageOutOfBounds);
     }
