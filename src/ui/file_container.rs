@@ -18,8 +18,7 @@ pub fn box_display(file_info: &File) -> FileColumn {
             file_type: file_type(file_info),
             file_size: file_info
                 .file
-                .metadata()
-                .unwrap()
+                .metadata
                 .len()
                 .human_count_bytes()
                 .to_string(),

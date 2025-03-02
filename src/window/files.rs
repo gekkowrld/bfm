@@ -3,12 +3,14 @@ use std::path::PathBuf;
 use iced::widget::{
     Column, MouseArea, column, container, mouse_area, row, scrollable, text, text_editor,
 };
-use iced::{Color, Element, Task, Theme, window};
+use iced::{Color, Element, Size, Task, Theme, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
 use crate::fs::file::{self, Directory};
-use crate::ui::display_bar::display_bar;
+use crate::fs::pagination::paginate;
+use crate::fs::xdg;
+use crate::ui::display_bar::{display_bar, display_bar_content};
 use crate::ui::error_page::error_display;
 use crate::ui::file_icon::icon;
 use crate::ui::info::directory_information;
@@ -63,12 +65,13 @@ pub enum Message {
     Error(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Screen {
     Welcome,
     Files(String, PathBuf),
     FileDisplay(PathBuf),
     ErrorDislay(String),
+    Blank,
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +92,9 @@ impl Window {
             Screen::Files(_, file_path) => file::path_to_string(file_path),
             Screen::FileDisplay(file_path) => file::path_to_string(file_path),
             Screen::ErrorDislay(error) => error.clone(),
+            Screen::Blank => {
+                "You are viewing a blank page, you will be taken to the right place soon".to_owned()
+            }
         }
         .replace("/", " - ")
             + " — bfm file manager"
@@ -102,15 +108,16 @@ impl Window {
         let mut content = text_editor::Content::new();
         let conf = conf::Config::new();
         let mut directory_content = None;
-        let mut files_display_tree = None;
-        let screen = match conf.get_last_path() {
+        let last_path = conf.get_last_path();
+        let mut bar_content = xdg::home().unwrap().to_string_lossy().to_string();
+        let screen = match last_path {
             Some(path) => {
-                let path = PathBuf::from(path);
+                bar_content = path.clone();
+                let d_path = display_bar_content(path);
+                let path = d_path.path;
                 if path.is_dir() {
                     directory_content = Some(file::directory_content(path.clone()).unwrap());
-                    files_display_tree =
-                        Some(directory_information(directory_content.as_ref().unwrap()));
-                    Screen::Files("".to_string(), path)
+                    Screen::Blank
                 } else {
                     let file_content = match file::file_content(path.clone()) {
                         Ok(content) => content,
@@ -138,11 +145,11 @@ impl Window {
         (
             Self {
                 screen,
-                display_bar_content: String::new(),
+                display_bar_content: bar_content,
                 content,
                 directory_content,
                 hovering_box: None,
-                files_display_tree,
+                files_display_tree: None,
                 config: DisplayTheme::new(),
             },
             Task::none(),
@@ -163,6 +170,7 @@ impl Window {
             }
 
             Message::OpenFile(file_path) => {
+                self.display_bar_content = file::path_to_string(&file_path);
                 let content = match file::file_content(file_path.clone()) {
                     Ok(content) => content,
                     Err(err) => {
@@ -194,44 +202,27 @@ impl Window {
                 Task::none()
             }
 
-            Message::DisplayBarContentSubmitted => {
-                self.screen =
-                    Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
-                self.directory_content = Some(
-                    file::directory_content(PathBuf::from(&self.display_bar_content)).unwrap(),
-                );
-                self.files_display_tree = Some(directory_information(
-                    self.directory_content.as_ref().unwrap(),
-                ));
-                Task::none()
-            }
+            Message::DisplayBarContentSubmitted => self.handle_file_operations(),
 
             Message::BoxClicked(file_path) => {
-                self.screen = Screen::Files("".to_string(), file_path.clone());
                 self.display_bar_content = file::path_to_string(&file_path);
-                self.directory_content = Some(file::directory_content(file_path).unwrap());
-                self.files_display_tree = Some(directory_information(
-                    self.directory_content.as_ref().unwrap(),
-                ));
-                Task::none()
+
+                self.handle_file_operations()
             }
 
             Message::Event(event) => match event {
                 iced::Event::Window(window_event) => match window_event {
                     iced::window::Event::Opened { position: _, size } => {
-                        let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = (size.width / 3.0) - 50.0;
-                        width.size = size.width / 3.0;
-                        width.type_ = size.width / 3.0;
-                        conf::Config::new().set_column_width(&width);
+                        self.calculate_sizes(size);
+                        if self.screen == Screen::Blank {
+                            return self.handle_file_operations();
+                        }
+
                         Task::none()
                     }
+
                     iced::window::Event::Resized(size) => {
-                        let mut width = crate::config::conf::ColumnWidth::default();
-                        width.name = (size.width / 3.0) - 50.0;
-                        width.size = size.width / 3.0;
-                        width.type_ = size.width / 3.0;
-                        conf::Config::new().set_column_width(&width);
+                        self.calculate_sizes(size);
                         Task::none()
                     }
 
@@ -253,6 +244,38 @@ impl Window {
         }
     }
 
+    fn calculate_sizes(&mut self, size: Size<f32>) {
+        let mut width = crate::config::conf::ColumnWidth::default();
+        width.name = (size.width / 3.0) - 50.0;
+        width.size = size.width / 3.0;
+        width.type_ = size.width / 3.0;
+        conf::Config::new().set_column_width(&width);
+    }
+
+    fn handle_file_operations(&mut self) -> Task<Message> {
+        let display_bar = display_bar_content(self.display_bar_content.clone());
+        let path = display_bar.path;
+        self.screen = Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
+        self.directory_content = Some(file::directory_content(path.clone()).unwrap());
+
+        let results = paginate(
+            self.directory_content.as_ref().unwrap().files(),
+            display_bar.page,
+            10,
+        );
+
+        let files = match results {
+            Ok(files) => files,
+            Err(err) => {
+                self.screen = Screen::ErrorDislay(format!("{err:#?}"));
+                return Task::none();
+            }
+        };
+
+        self.files_display_tree = Some(directory_information(&Directory { path, files }));
+        Task::none()
+    }
+
     pub fn view(&self) -> iced::Element<Message> {
         let screen = match &self.screen {
             Screen::Welcome => self.full_window(welcome_content()),
@@ -261,6 +284,7 @@ impl Window {
             Screen::ErrorDislay(error) => {
                 error_display(error.clone(), self.display_bar_content.clone())
             }
+            Screen::Blank => text!("This screen has been left blank intentionally!").into(),
         };
 
         screen

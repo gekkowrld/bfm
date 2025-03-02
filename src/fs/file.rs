@@ -3,21 +3,27 @@ use std::fs::DirEntry;
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct File {
     pub id: String,
     pub path: PathBuf,
-    pub file: std::fs::File,
+    pub file: FileInformation,
+}
+
+#[derive(Debug, Clone)]
+pub struct FileInformation {
+    pub metadata: std::fs::Metadata,
 }
 
 impl File {
     pub fn new(id: String, path: PathBuf) -> Result<File, std::io::Error> {
         let file = std::fs::File::open(&path)?;
-        Ok(File { id, path, file })
-    }
-
-    pub fn file_content(&mut self) -> Result<String, std::io::Error> {
-        extract_content(&self.file)
+        let metadata = file.metadata()?;
+        Ok(File {
+            id,
+            path,
+            file: FileInformation { metadata },
+        })
     }
 }
 
