@@ -5,6 +5,7 @@ pub fn main() -> iced::Result {
         .antialiasing(true)
         .resizable(true)
         .decorations(true)
+        .theme(Window::theme)
         .subscription(Window::subscription)
         .exit_on_close_request(false)
         .run_with(Window::new)

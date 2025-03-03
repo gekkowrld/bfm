@@ -1,4 +1,4 @@
-use super::file_icon::Assets;
+use crate::fs::embed::Assets;
 
 use iced::{
     Background, Border, Color, Shadow, Theme, border::Radius, color, widget::container::Style,
@@ -66,7 +66,7 @@ impl DisplayTheme {
     }
 
     pub fn window_background(_: &Theme) -> Style {
-        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let theme_string = String::from_iter(Assets::get_theme("dark").iter().map(|b| *b as char));
         let config: T = toml::from_str(&theme_string).unwrap();
         let fc = config.colors.window;
         let ffc = config.colors.file_column;
@@ -80,7 +80,7 @@ impl DisplayTheme {
     }
 
     pub fn row_style(_: &Theme) -> Style {
-        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let theme_string = String::from_iter(Assets::get_theme("dark").iter().map(|b| *b as char));
         let config: T = toml::from_str(&theme_string).unwrap();
         let fc = config.colors.file_column;
 
@@ -97,7 +97,7 @@ impl DisplayTheme {
     }
 
     pub fn row_style_selected(_theme: &Theme) -> Style {
-        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let theme_string = String::from_iter(Assets::get_theme("dark").iter().map(|b| *b as char));
         let config: T = toml::from_str(&theme_string).unwrap();
         let fc = config.colors.file_column;
 
@@ -114,7 +114,7 @@ impl DisplayTheme {
     }
 
     pub fn icon_color() -> Color {
-        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let theme_string = String::from_iter(Assets::get_theme("dark").iter().map(|b| *b as char));
         let config: T = toml::from_str(&theme_string).unwrap();
         let fc = config.colors.file_column;
 
@@ -122,18 +122,11 @@ impl DisplayTheme {
     }
 
     pub fn icon_color_selected() -> Color {
-        let theme_string = String::from_iter(Self::get_theme("dark").iter().map(|b| *b as char));
+        let theme_string = String::from_iter(Assets::get_theme("dark").iter().map(|b| *b as char));
         let config: T = toml::from_str(&theme_string).unwrap();
         let fc = config.colors.file_column;
 
         hex_to_color(fc.icon_color_selected)
-    }
-
-    fn get_theme(key: &str) -> Vec<u8> {
-        Assets::get(format!("themes/{key}.toml").as_str())
-            .unwrap()
-            .data
-            .into_owned()
     }
 }
 

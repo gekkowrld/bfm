@@ -10,6 +10,7 @@ use crate::config::conf;
 use crate::fs::file::{self, Directory};
 use crate::fs::pagination::paginate;
 use crate::fs::xdg;
+use crate::lua::theme::get_theme;
 use crate::ui::display_bar::{display_bar, display_bar_content};
 use crate::ui::error_page::error_display;
 use crate::ui::file_icon::icon;
@@ -106,6 +107,19 @@ impl Window {
         iced::event::listen().map(Message::Event)
     }
 
+    pub fn theme(&self) -> Theme {
+        iced::Theme::custom(
+            "darkie".to_string(),
+            iced::theme::Palette {
+                background: get_theme("dark").window_background,
+                text: get_theme("dark").text_color,
+                primary: get_theme("dark").text_color,
+                success: get_theme("dark").text_color,
+                danger: get_theme("dark").text_color,
+            },
+        )
+    }
+
     pub fn new() -> (Self, Task<Message>) {
         let mut content = text_editor::Content::new();
         let conf = conf::Config::new();
@@ -190,7 +204,6 @@ impl Window {
             }
             Message::BoxHovered(file_path, id) => {
                 self.hovering_box = Some(id.clone());
-                self.display_bar_content = file::path_to_string(&file_path);
                 self.screen = Screen::Files(id, file_path.clone());
                 Task::none()
             }
@@ -217,6 +230,7 @@ impl Window {
             Message::Event(event) => match event {
                 iced::Event::Window(window_event) => match window_event {
                     iced::window::Event::Opened { position: _, size } => {
+                        crate::lua::theme::get_theme("dark");
                         self.calculate_sizes(size);
                         if self.screen == Screen::Blank {
                             return self.handle_file_operations();
@@ -290,9 +304,9 @@ impl Window {
                 error_display(error.clone(), self.display_bar_content.clone())
             }
             Screen::Blank => container(text!("This screen has been left blank intentionally!"))
-                .style(self.config.window_decoration)
-                .height(Length::Fill)
-                .width(Length::Fill)
+                //.style(self.config.window_decoration)
+                //.height(Length::Fill)
+                //.width(Length::Fill)
                 .into(),
         };
 
