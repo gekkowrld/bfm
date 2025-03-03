@@ -1,21 +1,21 @@
 use std::path::PathBuf;
 
+use crate::lua::theme::Component::Box;
 use iced::widget::{
     Column, MouseArea, column, container, mouse_area, row, scrollable, text, text_editor,
 };
-use iced::{Color, Element, Size, Task, Theme, window};
+use iced::{Element, Size, Task, Theme, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
 use crate::fs::file::{self, Directory};
 use crate::fs::pagination::paginate;
 use crate::fs::xdg;
-use crate::lua::theme::get_theme;
+use crate::lua::theme::{component_style, get_theme};
 use crate::ui::display_bar::{display_bar, display_bar_content};
 use crate::ui::error_page::error_display;
 use crate::ui::file_icon::icon;
 use crate::ui::info::directory_information;
-use crate::ui::theme::DisplayTheme;
 use crate::ui::welcome::welcome_content;
 
 pub struct Window {
@@ -25,7 +25,6 @@ pub struct Window {
     directory_content: Option<Directory>,
     hovering_box: Option<String>,
     files_display_tree: Option<FilesUITree>,
-    config: DisplayTheme,
     pagination_size: usize,
 }
 
@@ -108,14 +107,15 @@ impl Window {
     }
 
     pub fn theme(&self) -> Theme {
+        let theme = get_theme("dark");
         iced::Theme::custom(
-            "darkie".to_string(),
+            theme.theme_name,
             iced::theme::Palette {
-                background: get_theme("dark").window_background,
-                text: get_theme("dark").text_color,
-                primary: get_theme("dark").text_color,
-                success: get_theme("dark").text_color,
-                danger: get_theme("dark").text_color,
+                background: theme.background,
+                text: theme.color,
+                primary: theme.primary,
+                success: theme.success,
+                danger: theme.error,
             },
         )
     }
@@ -146,7 +146,6 @@ impl Window {
                                     directory_content: None,
                                     hovering_box: None,
                                     files_display_tree: None,
-                                    config: DisplayTheme::new(),
                                     pagination_size: 30,
                                 },
                                 Task::none(),
@@ -167,7 +166,6 @@ impl Window {
                 directory_content,
                 hovering_box: None,
                 files_display_tree: None,
-                config: DisplayTheme::new(),
                 pagination_size: 30,
             },
             Task::none(),
@@ -267,7 +265,7 @@ impl Window {
         width.name = (size.width / 4.0) - 50.0;
         width.size = size.width / 4.0;
         width.type_ = size.width / 4.0;
-        width.modified = size.width / 4.0;
+        width.modified = (size.width / 4.0) - 50.0;
         conf::Config::new().set_column_width(&width);
     }
 
@@ -303,11 +301,9 @@ impl Window {
             Screen::ErrorDislay(error) => {
                 error_display(error.clone(), self.display_bar_content.clone())
             }
-            Screen::Blank => container(text!("This screen has been left blank intentionally!"))
-                //.style(self.config.window_decoration)
-                //.height(Length::Fill)
-                //.width(Length::Fill)
-                .into(),
+            Screen::Blank => {
+                container(text!("This screen has been left blank intentionally!")).into()
+            }
         };
 
         screen
@@ -332,7 +328,6 @@ impl Window {
             display_bar(self.display_bar_content.clone()),
             self.tree_render(self.files_display_tree.as_ref().unwrap().clone()),
         ])
-        .style(self.config.window_decoration)
         .width(Length::Fill)
         .height(Length::Fill)
         .into()
@@ -355,51 +350,15 @@ impl Window {
     }
 
     fn render_file_rows(&self, rows: Vec<FileColumn>) -> Column<Message> {
-        let rendered_rows = match &self.hovering_box {
-            Some(id) => self.render_rows_check(id),
-            None => column(rows.iter().map(|row| {
-                self.render_row(row, self.config.row_style, self.config.icon_color)
-                    .into()
-            })),
-        };
-
-        rendered_rows.spacing(10)
+        column(rows.iter().map(|row| self.render_row(row).into())).spacing(10)
     }
 
-    fn render_rows_check(&self, id: &String) -> Column<Message> {
-        column(
-            self.files_display_tree
-                .as_ref()
-                .unwrap()
-                .files_container
-                .iter()
-                .map(|row| {
-                    if row.id == *id {
-                        self.render_row(
-                            row,
-                            self.config.row_style_hovered,
-                            self.config.icon_color_selected,
-                        )
-                        .into()
-                    } else {
-                        self.render_row(row, self.config.row_style, self.config.icon_color)
-                            .into()
-                    }
-                }),
-        )
-    }
-
-    fn render_row(
-        &self,
-        row: &FileColumn,
-        box_style: fn(&Theme) -> container::Style,
-        icon_color: Color,
-    ) -> MouseArea<Message> {
+    fn render_row(&self, row: &FileColumn) -> MouseArea<Message> {
         let config = conf::Config::new().get_column_width();
         mouse_area(
             container(
                 row![
-                    icon(row.information.path.is_dir(), icon_color),
+                    icon(row.information.path.is_dir()),
                     text!("{}", row.information.filename).width(Length::Fixed(config.name)),
                     text!("{}", row.information.file_type).width(Length::Fixed(config.size)),
                     text!("{}", row.information.file_size).width(Length::Fixed(config.type_)),
@@ -408,21 +367,13 @@ impl Window {
                 .padding(10)
                 .width(Length::Fill),
             )
-            .style(box_style),
+            .style(component_style(Box)),
         )
         .on_press(if row.information.path.is_dir() {
             Message::BoxClicked(row.information.path.clone())
         } else {
             Message::OpenFile(row.information.path.clone())
         })
-        .on_enter(Message::BoxHovered(
-            row.information.path.clone().parent().unwrap().to_path_buf(),
-            row.id.clone(),
-        ))
-        .on_exit(Message::BoxHovered(
-            row.information.path.parent().unwrap().to_path_buf(),
-            "".to_string(),
-        ))
         .interaction(iced::mouse::Interaction::Pointer)
     }
 }

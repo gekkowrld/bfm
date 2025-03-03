@@ -2,6 +2,8 @@
     This is a theme file declaration mod file.
     This file will be included by default and is expected to be overridden by the user.
     If the values are not overridden, then the default values will be used.
+
+    DO NOT INCLUDE THIS FILE, IT WILL BE INCLUDED BY DEFAULT.
 -- ]]
 
 -- This is the metadata for the theme.
@@ -20,6 +22,71 @@ ThemeType = {
     light = "light",
     dark = "dark"
 }
+
+---@return Color
+local function color_grey()
+    return Color:from_hex("#2a2a2a")
+end
+
+
+---@class Radius
+---@field top_left number
+---@field top_right number
+---@field bottom_left number
+---@field bottom_right number
+Radius = {}
+
+---@param top_left number
+---@param top_right number
+---@param bottom_left number
+---@param bottom_right number
+---@return Radius
+function Radius:new(top_left, top_right, bottom_left, bottom_right)
+    local instance = {
+        top_left = top_left or 0,
+        top_right = top_right or 0,
+        bottom_left = bottom_left or 0,
+        bottom_right = bottom_right or 0
+    }
+    setmetatable(instance, { __index = self })
+    return instance
+end
+
+---@param radius number
+---@return Radius
+function Radius:new_equal(radius)
+    return Radius:new(radius, radius, radius, radius)
+end
+
+---@return Radius
+local function zero_radius()
+    return Radius:new(0, 0, 0, 0)
+end
+
+---@class Border
+---@field color Color
+---@field width number
+---@field radius Radius
+Border = {}
+
+---@param color Color
+---@param width number
+---@param radius Radius
+---@return Border
+function Border:new(color, width, radius)
+    local instance = {
+        color = color or color_grey(),
+        width = width or 0,
+        radius = radius or zero_radius()
+    }
+    setmetatable(instance, { __index = self })
+    return instance
+end
+
+---@return Border
+local function default_border()
+    return Border:new(color_grey(), 0, zero_radius())
+end
 
 ---@class Color
 ---@field red number (0-255)
@@ -46,7 +113,7 @@ end
 
 ---@param hex string
 ---@return Color
-function Color:from_rgb(hex)
+function Color:from_hex(hex)
     -- Remove the hash (#) symbol if it exists
     hex = hex:gsub("#", "")
 
@@ -65,26 +132,44 @@ end
 
 ---@class Theme
 ---@field theme_type ThemeType
----@field window_background Color
+---@field background Color
+---@field color Color
+---@field primary_color Color
+---@field success_color Color
+---@field warning_color Color
+---@field error_color Color
+---@field border Border
 Theme = {}
 
 ---@param theme_type ThemeType
----@param window_background Color
----@param text_color Color
+---@param background Color
+---@param color Color
+---@param primary_color Color
+---@param success_color Color
+---@param warning_color Color
+---@param error_color Color
+---@param border Border
 ---@return Theme
-function Theme:new(theme_type, window_background, text_color)
+function Theme:new(theme_type, background, color, primary_color, success_color, warning_color, error_color, border)
     local instance = {
         theme_type = theme_type or ThemeType.dark,
-        window_background = window_background or Color:new(0, 0, 0, 1),
-        text_color = text_color or Color:new(200, 200, 200, 1),
+        background = background or color_grey(),
+        color = color or Color:new(200, 200, 200, 1),
+        primary_color = primary_color or color_grey(),
+        success_color = success_color or color_grey(),
+        warning_color = warning_color or color_grey(),
+        error_color = error_color or color_grey(),
+        border = border or default_border()
     }
     setmetatable(instance, { __index = self })
     return instance
 end
 
 -- Default theme definitions
-local default_dark = Theme:new(ThemeType.dark, Color:new(0, 0, 0, 1), Color:new(200, 200, 200, 1))
-local default_light = Theme:new(ThemeType.light, Color:new(255, 255, 255, 1), Color:new(0, 0, 0, 1))
+local default_dark = Theme:new(ThemeType.dark, color_grey(), Color:new(200, 200, 200, 1), color_grey(),
+    color_grey(), color_grey(), color_grey(), default_border())
+local default_light = Theme:new(ThemeType.light, Color:new(255, 255, 255, 1), color_grey(),
+    color_grey(), color_grey(), color_grey(), color_grey(), default_border())
 
 ---comment
 ---@param metadata METADATA
@@ -95,11 +180,11 @@ function Theme:New(metadata, theme)
 
     -- Helper function to assign values
     local function mergeDefaults(themeDefaults, userTheme)
-        local mergerTheme = {}
+        local mergedTheme = {}
         for k, v in pairs(themeDefaults) do
-            mergerTheme[k] = userTheme[k] or v
+            mergedTheme[k] = (userTheme[k] ~= nil) and userTheme[k] or v
         end
-        return mergerTheme
+        return mergedTheme
     end
 
     -- Use the light or dark theme defaults based on the `theme_type`
