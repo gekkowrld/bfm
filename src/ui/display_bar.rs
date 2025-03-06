@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::window::files::Message;
+use crate::ui::files::Message;
 
 #[derive(Debug)]
 pub enum Expr {

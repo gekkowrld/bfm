@@ -1,4 +1,4 @@
-use crate::window::files::Message;
+use crate::ui::files::Message;
 use iced::Element;
 use iced::widget::{Column, Text};
 

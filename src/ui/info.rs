@@ -1,6 +1,6 @@
 use crate::fs::file::Directory;
 use crate::ui::file_container::box_display;
-use crate::window::files::{FileColumn, FilesUITree};
+use crate::ui::files::{FileColumn, FilesUITree};
 
 pub fn directory_information(directory: &Directory) -> FilesUITree {
     let children = directory.files.iter().map(box_display);

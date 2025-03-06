@@ -1,8 +1,8 @@
 use std::time::SystemTime;
 
 use crate::fs::file::File;
-use crate::window::files::FileColumn;
-use crate::window::files::FileColumnInformation;
+use crate::ui::files::FileColumn;
+use crate::ui::files::FileColumnInformation;
 use human_repr::HumanCount;
 
 pub fn box_display(file_info: &File) -> FileColumn {

@@ -1,4 +1,4 @@
-use bfm::window::files::Window;
+use bfm::ui::files::Window;
 use iced::Font;
 
 pub fn main() -> iced::Result {

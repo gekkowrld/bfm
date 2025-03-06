@@ -10,7 +10,7 @@ use iced::{Length, Subscription};
 use crate::config::conf;
 use crate::fs::file::{self, Directory};
 use crate::fs::pagination::paginate;
-use crate::fs::xdg;
+use crate::fs::{get_files, xdg};
 use crate::lua::theme::{component_style, get_theme};
 use crate::ui::display_bar::{display_bar, display_bar_content};
 use crate::ui::error_page::error_display;
@@ -132,7 +132,7 @@ impl Window {
                 let d_path = display_bar_content(path);
                 let path = d_path.path;
                 if path.is_dir() {
-                    directory_content = Some(file::directory_content(path.clone()).unwrap());
+                    directory_content = Some(get_files(&path).unwrap());
                     Screen::Blank
                 } else {
                     let file_content = match file::file_content(path.clone()) {
@@ -273,7 +273,7 @@ impl Window {
         let display_bar = display_bar_content(self.display_bar_content.clone());
         let path = display_bar.path;
         self.screen = Screen::Files("".to_string(), PathBuf::from(&self.display_bar_content));
-        self.directory_content = Some(file::directory_content(path.clone()).unwrap());
+        self.directory_content = Some(get_files(&path).unwrap());
 
         let results = paginate(
             self.directory_content.as_ref().unwrap().files(),

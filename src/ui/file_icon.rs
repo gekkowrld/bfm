@@ -1,5 +1,5 @@
 use crate::fs::embed::Assets;
-use crate::window::files::Message;
+use crate::ui::files::Message;
 use iced::{Element, Length, widget::svg};
 
 pub fn icon<'a>(is_dir: bool) -> Element<'a, Message> {

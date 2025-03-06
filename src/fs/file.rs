@@ -62,8 +62,8 @@ impl Directory {
     }
 }
 
-pub fn directory_content(directory: PathBuf) -> std::io::Result<Directory> {
-    let mut dir = Directory::new(&directory);
+pub fn directory_content(directory: &PathBuf) -> std::io::Result<Directory> {
+    let mut dir = Directory::new(directory);
 
     let entries = std::fs::read_dir(directory)?
         .filter_map(Result::ok)
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn test_directory_content() {
         let dir_path = PathBuf::from("/tmp/test_files");
-        let dir = directory_content(dir_path).unwrap();
+        let dir = directory_content(&dir_path).unwrap();
         assert_eq!(dir.files().len(), 1);
         assert_eq!(dir.files()[0].id, "test.txt");
     }
