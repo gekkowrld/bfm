@@ -27,8 +27,8 @@ impl File {
     }
 }
 
-pub fn file_content(file_path: PathBuf) -> Result<String, std::io::Error> {
-    let file = std::fs::File::open(&file_path)?;
+pub fn file_content(file_path: &PathBuf) -> Result<String, std::io::Error> {
+    let file = std::fs::File::open(file_path)?;
     extract_content(&file)
 }
 
@@ -92,10 +92,6 @@ fn file_id(file_info: &DirEntry) -> String {
     file_info.file_name().to_str().unwrap().to_string()
 }
 
-pub fn path_to_string(path: &Path) -> String {
-    path.to_str().unwrap().to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,7 +110,7 @@ mod tests {
     fn test_file_content() {
         let file_path = PathBuf::from("/tmp/test_files/test.txt");
         create_temp_file("Hello, World!");
-        let content = file_content(file_path).unwrap();
+        let content = file_content(&file_path).unwrap();
         assert_eq!(content, "Hello, World!");
     }
 

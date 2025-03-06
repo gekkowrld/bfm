@@ -8,9 +8,9 @@ use iced::{Element, Size, Task, Theme, window};
 use iced::{Length, Subscription};
 
 use crate::config::conf;
-use crate::fs::file::{self, Directory};
+use crate::fs::file::Directory;
 use crate::fs::pagination::paginate;
-use crate::fs::{get_files, xdg};
+use crate::fs::{get_file_content, get_files, path_to_string, xdg};
 use crate::lua::theme::{component_style, get_theme};
 use crate::ui::display_bar::{display_bar, display_bar_content};
 use crate::ui::error_page::error_display;
@@ -91,8 +91,8 @@ impl Window {
     pub fn title(&self) -> String {
         match &self.screen {
             Screen::Welcome => "Welcome".to_owned(),
-            Screen::Files(_, file_path) => file::path_to_string(file_path),
-            Screen::FileDisplay(file_path) => file::path_to_string(file_path),
+            Screen::Files(_, file_path) => path_to_string(file_path),
+            Screen::FileDisplay(file_path) => path_to_string(file_path),
             Screen::ErrorDislay(error) => error.clone(),
             Screen::Blank => {
                 "You are viewing a blank page, you will be taken to the right place soon".to_owned()
@@ -135,7 +135,7 @@ impl Window {
                     directory_content = Some(get_files(&path).unwrap());
                     Screen::Blank
                 } else {
-                    let file_content = match file::file_content(path.clone()) {
+                    let file_content = match get_file_content(&path) {
                         Ok(content) => content,
                         Err(err) => {
                             return (
@@ -186,8 +186,8 @@ impl Window {
             }
 
             Message::OpenFile(file_path) => {
-                self.display_bar_content = file::path_to_string(&file_path);
-                let content = match file::file_content(file_path.clone()) {
+                self.display_bar_content = path_to_string(&file_path);
+                let content = match get_file_content(&file_path) {
                     Ok(content) => content,
                     Err(err) => {
                         self.screen = Screen::ErrorDislay(err.to_string());
@@ -197,7 +197,7 @@ impl Window {
 
                 self.content = text_editor::Content::with_text(&content);
                 self.screen = Screen::FileDisplay(file_path.clone());
-                self.display_bar_content = file::path_to_string(&file_path);
+                self.display_bar_content = path_to_string(&file_path);
                 Task::none()
             }
             Message::BoxHovered(file_path, id) => {
@@ -208,7 +208,7 @@ impl Window {
 
             Message::OpenLink(link_path) => {
                 self.screen = Screen::Files("".to_string(), link_path.clone());
-                self.display_bar_content = file::path_to_string(&link_path);
+                self.display_bar_content = path_to_string(&link_path);
                 Task::none()
             }
 
@@ -220,7 +220,7 @@ impl Window {
             Message::DisplayBarContentSubmitted => self.handle_file_operations(),
 
             Message::BoxClicked(file_path) => {
-                self.display_bar_content = file::path_to_string(&file_path);
+                self.display_bar_content = path_to_string(&file_path);
 
                 self.handle_file_operations()
             }
