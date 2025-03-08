@@ -14,11 +14,12 @@ pub enum Message {
 #[derive(Debug)]
 pub enum Screen {
     Home,
+    Local(&'static str),
 }
 
 #[derive(Debug, Clone)]
 pub enum ButtonAction {
-    ListFiles(String),
+    ListFiles(&'static str),
 }
 
 impl Window {
@@ -50,8 +51,7 @@ impl Window {
         match message {
             Message::Button(action) => match action {
                 ButtonAction::ListFiles(file) => {
-                    let files = vfs::list_files(vfs::FS::Local, &file);
-                    println!("{}", files.unwrap());
+                    self.screen = Screen::Local(&file);
                     Task::none()
                 }
             },
@@ -61,6 +61,7 @@ impl Window {
     pub fn view(&self) -> iced::Element<Message> {
         match self.screen {
             Screen::Home => crate::home::home_screen(),
+            Screen::Local(path) => crate::dir::directory(path),
         }
     }
 }

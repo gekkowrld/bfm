@@ -2,6 +2,8 @@
 
 use iced::Font;
 
+mod dir;
+mod file_card;
 mod home;
 mod window;
 
