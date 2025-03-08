@@ -1,17 +1,33 @@
-[package]
-name = "bfm"
-version = "0.1.0"
-edition = "2024"
-authors = ["Gordon Onayo <gekkowrld@gmail.com"]
+[workspace]
+resolver = "3"
+members = ["bfm", "graphics", "vfs"]
 
-[dependencies]
-dirs = "6.0.0"
-human-repr = "1.1.0"
-iced = { version = "0.13.1", features = ["advanced", "svg"] }
-mlua = { version = "0.10.3", features = ["lua54", "vendored"] }
-rayon = "1.10.0"
-rust-embed = { version = "8.6.0", features = ["include-exclude"] }
-serde = "1.0.218"
-timediff = "0.2.3"
-toml = "0.8.20"
-url = "2.5.4"
+[workspace.dependencies]
+vfs = { path = "vfs" }
+bfm = { path = "bfm" }
+graphics = { path = "graphics" }
+
+[workspace.package]
+version = "0.0.1"
+
+[workspace.lints.rust]
+missing_debug_implementations = "deny"
+missing_docs = "deny"
+unsafe_code = "deny"
+unused_results = "deny"
+
+[workspace.lints.clippy]
+type-complexity = "allow"
+map-entry = "allow"
+semicolon_if_nothing_returned = "deny"
+trivially-copy-pass-by-ref = "deny"
+default_trait_access = "deny"
+match-wildcard-for-single-variants = "deny"
+redundant-closure-for-method-calls = "deny"
+filter_map_next = "deny"
+manual_let_else = "deny"
+unused_async = "deny"
+from_over_into = "deny"
+needless_borrow = "deny"
+new_without_default = "deny"
+useless_conversion = "deny"

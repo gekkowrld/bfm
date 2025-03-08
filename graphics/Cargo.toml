@@ -1,0 +1,10 @@
+[package]
+name = "graphics"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+iced = "0.13.1"
+
+[lints]
+workspace = true

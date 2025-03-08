@@ -1,0 +1,7 @@
+[package]
+name = "bfm"
+edition = "2024"
+version.workspace = true
+
+[dependencies]
+graphics.workspace = true
