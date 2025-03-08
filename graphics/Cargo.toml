@@ -4,7 +4,8 @@ edition = "2024"
 version.workspace = true
 
 [dependencies]
-iced = "0.13.1"
+vfs.workspace = true
+iced = { version = "0.13.1", features = ["advanced", "image", "svg"] }
 
 [lints]
 workspace = true

@@ -14,14 +14,41 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::unnecessary_to_owned)]
 
+use std::fmt;
 use std::fs::File;
 use std::io::Result;
+use std::path::PathBuf;
 
+mod embed;
 mod local;
 
 pub struct FileInformation {
     pub file: File,
     pub content: String,
+}
+
+pub struct DirectoryInformation<'a> {
+    pub name: &'a str,
+    pub files: Vec<PathBuf>,
+}
+
+impl fmt::Display for DirectoryInformation<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut files = String::new();
+
+        self.files.iter().for_each(|file| {
+            files.push_str(
+                format!(
+                    "Path: {} Is Dir: {}\n",
+                    file.to_str().unwrap(),
+                    file.is_dir()
+                )
+                .as_str(),
+            )
+        });
+
+        write!(f, "Path: {}\nFiles:\n{}\n", self.name, files)
+    }
 }
 
 pub enum FS {
@@ -56,8 +83,13 @@ pub fn read_file(fs_type: FS, filename: &str) -> Result<FileInformation> {
 /// A `Result` with a vector of file names.
 /// # Errors
 /// If the directory cannot be read.
-pub fn list_files(fs_type: FS, path: &str) -> Result<Vec<String>> {
+pub fn list_files(fs_type: FS, path: &str) -> Result<DirectoryInformation> {
     match fs_type {
         FS::Local => local::list_files(path),
     }
+}
+
+/// Get the app icon/logo
+pub fn get_icon() -> Vec<u8> {
+    embed::Assets::get_logo()
 }

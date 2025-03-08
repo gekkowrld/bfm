@@ -2,6 +2,7 @@
 
 use iced::Font;
 
+mod home;
 mod window;
 
 /// The result type for the graphics lib.
@@ -14,5 +15,6 @@ pub fn run() -> IcedResult {
         .decorations(true)
         .default_font(Font::MONOSPACE)
         .theme(window::Window::theme)
+        .window(window::Window::window_settings())
         .run_with(window::Window::new)
 }
