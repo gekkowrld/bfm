@@ -9,7 +9,7 @@ pub fn home_screen<'a>() -> iced::Element<'a, Message> {
             text!("Welcome to BF Manager"),
             text!("A File Manager for YOU!"),
             button(text!("Browse Local Files")).on_press(Message::Button(ButtonAction::ListFiles(
-                "/home/gekkowrld/music"
+                "/tmp/bnf/".to_string()
             )))
         ]
         .spacing(12),

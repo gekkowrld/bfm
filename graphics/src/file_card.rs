@@ -1,3 +1,4 @@
+use crate::window::ButtonAction;
 use crate::window::Message;
 use iced::widget::{column, container, mouse_area, text};
 use iced::{Color, Element, Length, Theme};
@@ -5,11 +6,11 @@ use std::path::PathBuf;
 
 pub fn card<'a>(file: &PathBuf) -> Element<'a, Message> {
     let is_dir = file.is_dir();
-    let path = file.to_str().unwrap();
+    let path = file.to_str().unwrap().to_owned();
     mouse_area(
         container(
             column![
-                text!("{path}"),
+                text!("{}", path.clone()),
                 text!("{}", if is_dir { "Directory" } else { "File" })
             ]
             .padding(10)
@@ -18,6 +19,11 @@ pub fn card<'a>(file: &PathBuf) -> Element<'a, Message> {
         )
         .style(container_style),
     )
+    .on_press(if is_dir {
+        Message::Button(ButtonAction::ListFiles(path))
+    } else {
+        Message::Button(ButtonAction::ViewFile(path))
+    })
     .interaction(iced::mouse::Interaction::Pointer)
     .into()
 }

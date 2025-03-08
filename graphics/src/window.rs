@@ -14,12 +14,13 @@ pub enum Message {
 #[derive(Debug)]
 pub enum Screen {
     Home,
-    Local(&'static str),
+    Local(String),
 }
 
 #[derive(Debug, Clone)]
 pub enum ButtonAction {
-    ListFiles(&'static str),
+    ListFiles(String),
+    ViewFile(String),
 }
 
 impl Window {
@@ -51,7 +52,11 @@ impl Window {
         match message {
             Message::Button(action) => match action {
                 ButtonAction::ListFiles(file) => {
-                    self.screen = Screen::Local(&file);
+                    self.screen = Screen::Local(file);
+                    Task::none()
+                }
+                ButtonAction::ViewFile(_file) => {
+                    self.screen = Screen::Home;
                     Task::none()
                 }
             },
@@ -59,7 +64,7 @@ impl Window {
     }
 
     pub fn view(&self) -> iced::Element<Message> {
-        match self.screen {
+        match &self.screen {
             Screen::Home => crate::home::home_screen(),
             Screen::Local(path) => crate::dir::directory(path),
         }
