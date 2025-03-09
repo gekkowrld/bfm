@@ -8,6 +8,7 @@ pub struct Window {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    NOACTION,
     Button(ButtonAction),
 }
 
@@ -15,6 +16,7 @@ pub enum Message {
 pub enum Screen {
     Home,
     Local(String),
+    ViewFile(String),
 }
 
 #[derive(Debug, Clone)]
@@ -50,13 +52,14 @@ impl Window {
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::NOACTION => Task::none(),
             Message::Button(action) => match action {
                 ButtonAction::ListFiles(file) => {
                     self.screen = Screen::Local(file);
                     Task::none()
                 }
-                ButtonAction::ViewFile(_file) => {
-                    self.screen = Screen::Home;
+                ButtonAction::ViewFile(file) => {
+                    self.screen = Screen::ViewFile(file);
                     Task::none()
                 }
             },
@@ -67,6 +70,7 @@ impl Window {
         match &self.screen {
             Screen::Home => crate::home::home_screen(),
             Screen::Local(path) => crate::dir::directory(path),
+            Screen::ViewFile(path) => crate::text_viewer::file(path.clone()),
         }
     }
 }

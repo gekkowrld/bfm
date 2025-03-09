@@ -6,6 +6,7 @@ version.workspace = true
 [dependencies]
 vfs.workspace = true
 iced = { version = "0.13.1", features = ["advanced", "image", "svg"] }
+humanize-bytes = "1.0.6"
 
 [lints]
 workspace = true

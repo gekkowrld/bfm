@@ -5,6 +5,7 @@ use iced::Font;
 mod dir;
 mod file_card;
 mod home;
+mod text_viewer;
 mod window;
 
 /// The result type for the graphics lib.
