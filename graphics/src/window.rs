@@ -35,6 +35,30 @@ impl Window {
         )
     }
 
+    pub fn title(&self) -> String {
+        let app_name = String::from("BF Manager — ");
+        match &self.screen {
+            Screen::Home => format!("{app_name}Home"),
+            Screen::Local(path) => format!("{app_name}{}", Self::path_to_title(path)),
+            Screen::ViewFile(path) => format!("{app_name}{}", Self::path_to_title(path)),
+        }
+    }
+
+    fn path_to_title(path: &str) -> String {
+        let mut title = String::new();
+
+        for part in Self::split_path(path.trim_matches('/')) {
+            title.push_str(&part);
+            title.push_str(" ::> ");
+        }
+
+        title
+    }
+
+    fn split_path(path: &str) -> Vec<String> {
+        path.split('/').map(|s| s.to_string()).collect()
+    }
+
     pub fn theme(&self) -> iced::Theme {
         iced::Theme::Nord
     }
