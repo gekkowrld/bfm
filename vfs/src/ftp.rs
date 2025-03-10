@@ -69,7 +69,12 @@ fn stream_file_to_file_info(parent: &str, file: String) -> crate::FileInfo {
 
 pub fn read_file(stream: &mut FtpStream, filename: &str) -> Result<FileInformation> {
     let buffer = stream.retr_as_buffer(filename).unwrap();
-    let content = String::from_utf8(buffer.into_inner()).ok().unwrap();
+    let content = String::from_utf8(buffer.into_inner());
+
+    let content = match content {
+        Ok(content) => content,
+        Err(_) => "THIS IS A BINARY FILE, ONLY TEXT FILES ALLOWED".to_string(),
+    };
 
     Ok(FileInformation {
         content,

@@ -8,6 +8,7 @@ pub struct Window {
     address: String,
     username: String,
     password: String,
+    opt_path: Option<String>,
     ftp_stream: Option<vfs::FTPStream>,
 }
 
@@ -65,6 +66,7 @@ impl Window {
                 username: String::new(),
                 password: String::new(),
                 ftp_stream: None,
+                opt_path: None,
             },
             Task::none(),
         )
@@ -78,7 +80,10 @@ impl Window {
             Screen::ViewFile(path) => format!("{app_name}{}", Self::path_to_title(path)),
             Screen::FTPLogin => format!("{app_name}FTP Login"),
             Screen::ViewFTP(dir) => format!("{app_name}{}", Self::path_to_title(&dir.name)),
-            Screen::ViewFtpFile(path) => format!("{app_name}{}", Self::path_to_title(path)),
+            Screen::ViewFtpFile(_) => format!(
+                "{app_name}{}",
+                Self::path_to_title(self.opt_path.as_ref().unwrap_or(&String::new()))
+            ),
         }
     }
 
@@ -150,6 +155,7 @@ impl Window {
                 }
 
                 ButtonAction::ViewFtpFile(file) => {
+                    self.opt_path = Some(file.clone());
                     if let Some(ftp_stream) = &mut self.ftp_stream {
                         match vfs::read_file(vfs::FS::FTP(ftp_stream), &file) {
                             Ok(file) => {
