@@ -82,6 +82,8 @@ fn parse_content(lexed: Vec<Expr>) -> Bar {
         _ => BarFS::Local,
     };
 
+    let path = path.trim().to_string();
+
     Bar { path, page, fs }
 }
 

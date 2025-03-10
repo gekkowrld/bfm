@@ -133,28 +133,12 @@ impl Window {
                 Task::none()
             }
             Message::DisplayBarContentSubmitted => {
-                let bar = crate::display_bar::display_bar_content(self.display_bar.clone());
+                let ftp_stream = match self.ftp_stream {
+                    Some(_) => self.ftp_stream.as_mut(),
+                    None => None,
+                };
 
-                match bar.fs {
-                    crate::display_bar::BarFS::Local => {
-                        self.screen = Screen::Local(bar.path);
-                    }
-                    crate::display_bar::BarFS::FTP => {
-                        let ftp_stream = self.ftp_stream.as_mut();
-
-                        let ftp_stream = match ftp_stream {
-                            Some(ftp_stream) => ftp_stream,
-                            None => {
-                                self.screen = Screen::FTPLogin;
-                                return Task::none();
-                            }
-                        };
-
-                        let director_info = vfs::list_files(vfs::FS::FTP(ftp_stream), &bar.path);
-                        self.screen = Screen::ViewFTP(director_info.unwrap());
-                    }
-                }
-
+                self.screen = path_to_screen(self.display_bar.to_string(), ftp_stream);
                 Task::none()
             }
             Message::FTPUsernameChanged(username) => {
@@ -171,18 +155,12 @@ impl Window {
                     Task::none()
                 }
                 ButtonAction::ListFtpFiles(path) => {
-                    if let Some(ftp_stream) = &mut self.ftp_stream {
-                        match vfs::list_files(vfs::FS::FTP(ftp_stream), &path) {
-                            Ok(dir) => {
-                                self.screen = Screen::ViewFTP(dir);
-                            }
-                            Err(e) => {
-                                println!("Failed to list files: {:?}", e);
-                            }
-                        }
-                    } else {
-                        println!("FTP stream is not connected.");
-                    }
+                    let ftp_stream = match self.ftp_stream {
+                        Some(_) => self.ftp_stream.as_mut(),
+                        None => None,
+                    };
+
+                    self.screen = list_ftp_files(ftp_stream, Some(path));
 
                     Task::none()
                 }
@@ -210,18 +188,12 @@ impl Window {
                     self.ftp_stream =
                         vfs::connect(&login.address, &login.username, &login.password);
 
-                    if let Some(ftp_stream) = &mut self.ftp_stream {
-                        match vfs::list_files(vfs::FS::FTP(ftp_stream), "/") {
-                            Ok(dir) => {
-                                self.screen = Screen::ViewFTP(dir);
-                            }
-                            Err(e) => {
-                                println!("Failed to list files: {:?}", e);
-                            }
-                        }
-                    } else {
-                        println!("FTP stream is not connected.");
-                    }
+                    let ftp_stream = match self.ftp_stream {
+                        Some(_) => self.ftp_stream.as_mut(),
+                        None => None,
+                    };
+
+                    self.screen = list_ftp_files(ftp_stream, None);
 
                     Task::none()
                 }
@@ -247,5 +219,51 @@ impl Window {
             .push(crate::display_bar::display_bar(self.display_bar.clone()))
             .push(view_screen)
             .into()
+    }
+}
+
+fn list_ftp_files(ftp: Option<&mut vfs::FTPStream>, path: Option<String>) -> Screen {
+    let ftp_stream = match ftp {
+        Some(ftp) => ftp,
+        None => return Screen::FTPLogin,
+    };
+
+    let path = match path {
+        Some(path) => path,
+        None => match ftp_stream.pwd() {
+            Ok(path) => path,
+            Err(err) => {
+                println!("Error getting path {err}");
+                return Screen::FTPLogin;
+            }
+        },
+    };
+
+    let director_info = vfs::list_files(vfs::FS::FTP(ftp_stream), &path);
+    Screen::ViewFTP(director_info.unwrap())
+}
+
+fn path_to_screen(path: String, ftp: Option<&mut vfs::FTPStream>) -> Screen {
+    let bar_c = crate::display_bar::display_bar_content(path.clone());
+
+    match bar_c.fs {
+        crate::display_bar::BarFS::Local => Screen::Local(bar_c.path),
+        crate::display_bar::BarFS::FTP => {
+            let ftp_stream = match ftp {
+                Some(ftp) => ftp,
+                None => return Screen::FTPLogin,
+            };
+
+            let director_info = vfs::list_files(vfs::FS::FTP(ftp_stream), &bar_c.path);
+            let info = match director_info {
+                Ok(info) => info,
+                Err(err) => {
+                    println!("{err}");
+                    return Screen::Home;
+                }
+            };
+
+            Screen::ViewFTP(info)
+        }
     }
 }
