@@ -1,5 +1,6 @@
+use std::str::FromStr;
 use std::{io::Result, path::Path};
-use suppaftp::{FtpStream, types::FileType};
+use suppaftp::{FtpStream, list::File, types::FileType};
 
 use crate::{DirectoryInformation, FileInformation};
 
@@ -51,18 +52,15 @@ fn stream_file_to_file_info(parent: &str, file: String) -> crate::FileInfo {
     // 'Permissions', 'Links', 'Owner', 'Group', 'Size', 'Month', 'Day', 'Time', 'Name'
     // We have to split it to get the relevant information
 
-    let parts: Vec<&str> = file.split_whitespace().collect();
-    let name = parts[8].to_string();
-    let is_dir = parts[0].starts_with('d');
-    let size = parts[4].parse().unwrap_or(0);
-
+    let info = File::from_str(&file).unwrap();
+    let name = info.name();
     let name = Path::new(parent).join(name).to_str().unwrap().to_string();
 
     crate::FileInfo {
         name,
-        size,
-        is_dir,
-        is_symlink: false,
+        size: info.size() as u64,
+        is_dir: info.is_directory(),
+        is_symlink: info.is_symlink(),
         is_ftp: true,
     }
 }
