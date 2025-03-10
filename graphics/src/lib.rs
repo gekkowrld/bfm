@@ -4,6 +4,7 @@ use iced::Font;
 
 mod dir;
 mod file_card;
+mod ftp;
 mod home;
 mod text_viewer;
 mod window;

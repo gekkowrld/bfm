@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 rust-embed = { version = "8.6.0", features = ["include-exclude"] }
+suppaftp = "6.0.7"

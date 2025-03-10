@@ -10,7 +10,8 @@ pub fn home_screen<'a>() -> iced::Element<'a, Message> {
             text!("A File Manager for YOU!"),
             button(text!("Browse Local Files")).on_press(Message::Button(ButtonAction::ListFiles(
                 "/tmp/bnfd".to_string()
-            )))
+            ))),
+            button(text!("Browse FTP servers")).on_press(Message::Button(ButtonAction::FTPLogin))
         ]
         .spacing(12),
     )

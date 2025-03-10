@@ -3,11 +3,11 @@ use crate::window::Message;
 use humanize_bytes::humanize_bytes_binary;
 use iced::widget::{column, container, mouse_area, row, text};
 use iced::{Color, Element, Length, Theme};
-use std::path::PathBuf;
+use vfs::FileInfo;
 
-pub fn card<'a>(file: &PathBuf) -> Element<'a, Message> {
-    let is_dir = file.is_dir();
-    let path = file.to_str().unwrap().to_owned();
+pub fn card<'a>(file: &FileInfo) -> Element<'a, Message> {
+    let is_dir = file.is_dir;
+    let path = file.name.clone();
     let (file_type, got_error) = file_type(file);
     let file_size_color = Color::parse("#ffb8b8").unwrap_or(Color::WHITE);
     let file_type_color = if got_error {
@@ -15,17 +15,13 @@ pub fn card<'a>(file: &PathBuf) -> Element<'a, Message> {
     } else {
         Color::parse("#eb5800").unwrap_or(Color::WHITE)
     };
-    let file_size = match file.metadata() {
-        Ok(metadata) => metadata.len(),
-        Err(_) => 0,
-    };
 
     mouse_area(
         container(
             column![
                 text!("{}", path.clone()),
                 row![
-                    text!("{}", humanize_bytes_binary!(file_size)).color(file_size_color),
+                    text!("{}", humanize_bytes_binary!(file.size)).color(file_size_color),
                     text!("{file_type}").color(file_type_color),
                 ]
                 .spacing(10)
@@ -43,9 +39,17 @@ pub fn card<'a>(file: &PathBuf) -> Element<'a, Message> {
     .on_press(if got_error {
         Message::NOACTION
     } else if is_dir {
-        Message::Button(ButtonAction::ListFiles(path))
+        if file.is_ftp {
+            Message::Button(ButtonAction::ListFtpFiles(path))
+        } else {
+            Message::Button(ButtonAction::ListFiles(path))
+        }
     } else {
-        Message::Button(ButtonAction::ViewFile(path))
+        if file.is_ftp {
+            Message::Button(ButtonAction::ViewFtpFile(path))
+        } else {
+            Message::Button(ButtonAction::ViewFile(path))
+        }
     })
     .interaction(if got_error {
         iced::mouse::Interaction::NotAllowed
@@ -71,37 +75,18 @@ fn container_style(theme: &Theme) -> container::Style {
     }
 }
 
-fn file_type(file: &PathBuf) -> (String, bool) {
+fn file_type(file: &FileInfo) -> (String, bool) {
     let mut f_types = String::new();
-    let mut got_error = false;
 
-    if file.is_dir() {
+    if file.is_dir {
         f_types.push_str("Directory");
-
-        match file.read_dir() {
-            Ok(_) => {}
-            Err(err) => {
-                got_error = true;
-                f_types.push_str(format!("  {}", err.kind().to_string().to_uppercase()).as_str());
-            }
-        }
     } else {
         f_types.push_str("File");
-
-        let open_file = std::fs::File::open(file);
-
-        match open_file {
-            Ok(_) => {}
-            Err(err) => {
-                got_error = true;
-                f_types.push_str(format!("  {}", err.kind().to_string().to_uppercase()).as_str());
-            }
-        }
     }
 
-    if file.is_symlink() {
+    if file.is_symlink {
         f_types.push_str("  Symlink");
     }
 
-    (f_types, got_error)
+    (f_types, false)
 }
