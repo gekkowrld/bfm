@@ -3,6 +3,7 @@
 use iced::Font;
 
 mod dir;
+mod display_bar;
 mod file_card;
 mod ftp;
 mod home;

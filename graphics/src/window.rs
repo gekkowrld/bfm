@@ -10,6 +10,7 @@ pub struct Window {
     password: String,
     opt_path: Option<String>,
     ftp_stream: Option<vfs::FTPStream>,
+    display_bar: String,
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +20,8 @@ pub enum Message {
     FTPUsernameChanged(String),
     FTPPasswordChanged(String),
     Button(ButtonAction),
+    DisplayBarContentChanged(String),
+    DisplayBarContentSubmitted,
 }
 
 pub enum Screen {
@@ -67,6 +70,7 @@ impl Window {
                 password: String::new(),
                 ftp_stream: None,
                 opt_path: None,
+                display_bar: String::new(),
             },
             Task::none(),
         )
@@ -122,6 +126,35 @@ impl Window {
             Message::NOACTION => Task::none(),
             Message::FTPAdressChanged(address) => {
                 self.address = address;
+                Task::none()
+            }
+            Message::DisplayBarContentChanged(value) => {
+                self.display_bar = value;
+                Task::none()
+            }
+            Message::DisplayBarContentSubmitted => {
+                let bar = crate::display_bar::display_bar_content(self.display_bar.clone());
+
+                match bar.fs {
+                    crate::display_bar::BarFS::Local => {
+                        self.screen = Screen::Local(bar.path);
+                    }
+                    crate::display_bar::BarFS::FTP => {
+                        let ftp_stream = self.ftp_stream.as_mut();
+
+                        let ftp_stream = match ftp_stream {
+                            Some(ftp_stream) => ftp_stream,
+                            None => {
+                                self.screen = Screen::FTPLogin;
+                                return Task::none();
+                            }
+                        };
+
+                        let director_info = vfs::list_files(vfs::FS::FTP(ftp_stream), &bar.path);
+                        self.screen = Screen::ViewFTP(director_info.unwrap());
+                    }
+                }
+
                 Task::none()
             }
             Message::FTPUsernameChanged(username) => {
@@ -203,7 +236,7 @@ impl Window {
     }
 
     pub fn view(&self) -> iced::Element<Message> {
-        match &self.screen {
+        let view_screen = match &self.screen {
             Screen::Home => crate::home::home_screen(),
             Screen::Local(path) => crate::dir::directory(path),
             Screen::ViewFile(path) => crate::text_viewer::file(path.clone()),
@@ -214,6 +247,11 @@ impl Window {
                 self.username.clone(),
                 self.password.clone(),
             ),
-        }
+        };
+
+        iced::widget::Column::new()
+            .push(crate::display_bar::display_bar(self.display_bar.clone()))
+            .push(view_screen)
+            .into()
     }
 }
