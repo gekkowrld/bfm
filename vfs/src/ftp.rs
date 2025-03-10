@@ -73,7 +73,12 @@ pub fn read_file(stream: &mut FtpStream, filename: &str) -> Result<FileInformati
 
     let content = match content {
         Ok(content) => content,
-        Err(_) => "THIS IS A BINARY FILE, ONLY TEXT FILES ALLOWED".to_string(),
+        Err(err) => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Failed to read file: {:?}", err.to_string()),
+            ));
+        }
     };
 
     Ok(FileInformation {

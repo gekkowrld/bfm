@@ -28,7 +28,7 @@ pub enum Screen {
     Home,
     Local(String),
     ViewFile(String),
-    ViewFtpFile(String),
+    ViewFtpFile(std::io::Result<vfs::FileInformation>),
     ViewFTP(DirectoryInformation),
     FTPLogin,
 }
@@ -190,14 +190,8 @@ impl Window {
                 ButtonAction::ViewFtpFile(file) => {
                     self.opt_path = Some(file.clone());
                     if let Some(ftp_stream) = &mut self.ftp_stream {
-                        match vfs::read_file(vfs::FS::FTP(ftp_stream), &file) {
-                            Ok(file) => {
-                                self.screen = Screen::ViewFtpFile(file.content);
-                            }
-                            Err(e) => {
-                                println!("Failed to read file: {:?}", e);
-                            }
-                        }
+                        let content = vfs::read_file(vfs::FS::FTP(ftp_stream), &file);
+                        self.screen = Screen::ViewFtpFile(content);
                     } else {
                         println!("FTP stream is not connected.");
                     }
@@ -241,7 +235,7 @@ impl Window {
             Screen::Local(path) => crate::dir::directory(path),
             Screen::ViewFile(path) => crate::text_viewer::file(path.clone()),
             Screen::ViewFTP(dir) => crate::dir::directory_info(dir),
-            Screen::ViewFtpFile(content) => crate::text_viewer::file_display(content.to_string()),
+            Screen::ViewFtpFile(content) => crate::text_viewer::file_display(content),
             Screen::FTPLogin => crate::ftp::ftp_login(
                 self.address.clone(),
                 self.username.clone(),
