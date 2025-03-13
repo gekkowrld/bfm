@@ -6,9 +6,10 @@ use crate::{DirectoryInformation, FileInfo};
 
 pub fn read_file(filename: &str) -> Result<FileInformation> {
     let file = File::open(filename)?;
-    let mut content = String::new();
+    let mut content = vec![];
     let mut buf_reader = BufReader::new(&file);
-    buf_reader.read_to_string(&mut content)?;
+
+    buf_reader.read_to_end(&mut content)?;
     let file_info = FileInformation {
         file: FileInfo {
             name: filename.to_string(),

@@ -14,16 +14,10 @@ pub fn file(path: String) -> Element<'static, Message> {
 
 pub fn file_display(content: &Result<vfs::FileInformation>) -> Element<'static, Message> {
     let content = match content {
-        Ok(file) => file.content.clone(),
+        Ok(content) => String::from_utf8_lossy(&content.content).to_string(),
         Err(err) => match err.kind() {
-            ErrorKind::NotFound => format!("File not found:\n {:?}", err.to_string()),
-            ErrorKind::InvalidData => {
-                format!(
-                    "NOT A TEXT FILE, BINARY FILES ARE NOT SUPPORTED:\n {:?}",
-                    err.to_string()
-                )
-            }
-            _ => format!("Error: {:?}", err),
+            ErrorKind::NotFound => "File not found".to_string(),
+            _ => "Failed to read file".to_string(),
         },
     };
 

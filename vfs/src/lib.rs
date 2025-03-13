@@ -26,7 +26,7 @@ pub type FTPStream = FtpStream;
 
 pub struct FileInformation {
     pub file: FileInfo,
-    pub content: String,
+    pub content: Vec<u8>,
 }
 
 #[derive(Debug)]
@@ -68,7 +68,7 @@ pub enum FS<'a> {
 }
 
 impl FileInformation {
-    pub fn new(file: FileInfo, content: String) -> Self {
+    pub fn new(file: FileInfo, content: Vec<u8>) -> Self {
         Self { file, content }
     }
 }

@@ -66,18 +66,9 @@ fn stream_file_to_file_info(parent: &str, file: String) -> crate::FileInfo {
 }
 
 pub fn read_file(stream: &mut FtpStream, filename: &str) -> Result<FileInformation> {
-    let buffer = stream.retr_as_buffer(filename).unwrap();
-    let content = String::from_utf8(buffer.into_inner());
+    let content = stream.retr_as_buffer(filename).unwrap();
 
-    let content = match content {
-        Ok(content) => content,
-        Err(err) => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Failed to read file: {:?}", err.to_string()),
-            ));
-        }
-    };
+    let content = content.into_inner();
 
     Ok(FileInformation {
         content,
