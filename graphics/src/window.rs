@@ -129,6 +129,12 @@ impl Window {
         match message {
             Message::NOACTION => Task::none(),
             Message::TextEditorAction(action) => {
+                // Disable editing for now
+                match action {
+                    Action::Edit(_) => return Task::none(),
+                    _ => (),
+                }
+
                 self.text_content.as_mut().unwrap().perform(action);
                 Task::none()
             }
