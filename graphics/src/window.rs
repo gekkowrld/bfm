@@ -201,6 +201,7 @@ impl Window {
                 }
                 ButtonAction::ViewFile(file) => {
                     self.screen = Screen::ViewFile(file.clone());
+                    self.opt_path = Some(file.clone());
                     let content = vfs::read_file(vfs::FS::Local, &file).unwrap().content;
 
                     let content = String::from_utf8_lossy(&content);
@@ -232,13 +233,15 @@ impl Window {
         let view_screen = match &self.screen {
             Screen::Home => crate::home::home_screen(),
             Screen::Local(path) => crate::dir::directory(path),
-            Screen::ViewFile(_path) => {
-                crate::text_viewer::display_file(self.text_content.as_ref().unwrap())
-            }
+            Screen::ViewFile(_path) => crate::text_viewer::display_file(
+                self.opt_path.as_ref().unwrap_or(&"".to_string()),
+                self.text_content.as_ref().unwrap(),
+            ),
             Screen::ViewFTP(dir) => crate::dir::directory_info(dir),
-            Screen::ViewFtpFile => {
-                crate::text_viewer::display_file(self.text_content.as_ref().unwrap())
-            }
+            Screen::ViewFtpFile => crate::text_viewer::display_file(
+                self.opt_path.as_ref().unwrap_or(&"".to_string()),
+                self.text_content.as_ref().unwrap(),
+            ),
             Screen::FTPLogin => crate::ftp::ftp_login(
                 self.address.clone(),
                 self.username.clone(),
