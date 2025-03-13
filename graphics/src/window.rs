@@ -1,4 +1,5 @@
 use iced::advanced::graphics::image::image_rs::ImageFormat;
+use iced::widget::text_editor::{Action, Content};
 use iced::window::Settings;
 use iced::{Task, window};
 use vfs::DirectoryInformation;
@@ -11,6 +12,7 @@ pub struct Window {
     opt_path: Option<String>,
     ftp_stream: Option<vfs::FTPStream>,
     display_bar: String,
+    text_content: Option<Content>,
 }
 
 #[derive(Debug, Clone)]
@@ -22,13 +24,14 @@ pub enum Message {
     Button(ButtonAction),
     DisplayBarContentChanged(String),
     DisplayBarContentSubmitted,
+    TextEditorAction(Action),
 }
 
 pub enum Screen {
     Home,
     Local(String),
     ViewFile(String),
-    ViewFtpFile(std::io::Result<vfs::FileInformation>),
+    ViewFtpFile,
     ViewFTP(DirectoryInformation),
     FTPLogin,
 }
@@ -71,6 +74,7 @@ impl Window {
                 ftp_stream: None,
                 opt_path: None,
                 display_bar: String::new(),
+                text_content: None,
             },
             Task::none(),
         )
@@ -84,7 +88,7 @@ impl Window {
             Screen::ViewFile(path) => format!("{app_name}{}", Self::path_to_title(path)),
             Screen::FTPLogin => format!("{app_name}FTP Login"),
             Screen::ViewFTP(dir) => format!("{app_name}{}", Self::path_to_title(&dir.name)),
-            Screen::ViewFtpFile(_) => format!(
+            Screen::ViewFtpFile => format!(
                 "{app_name}{}",
                 Self::path_to_title(self.opt_path.as_ref().unwrap_or(&String::new()))
             ),
@@ -124,6 +128,10 @@ impl Window {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NOACTION => Task::none(),
+            Message::TextEditorAction(action) => {
+                self.text_content.as_mut().unwrap().perform(action);
+                Task::none()
+            }
             Message::FTPAdressChanged(address) => {
                 self.address = address;
                 Task::none()
@@ -169,7 +177,16 @@ impl Window {
                     self.opt_path = Some(file.clone());
                     if let Some(ftp_stream) = &mut self.ftp_stream {
                         let content = vfs::read_file(vfs::FS::FTP(ftp_stream), &file);
-                        self.screen = Screen::ViewFtpFile(content);
+                        let content = match content {
+                            Ok(content) => content,
+                            Err(err) => {
+                                println!("{err}");
+                                return Task::none();
+                            }
+                        };
+                        let content = String::from_utf8_lossy(&content.content);
+                        self.text_content = Some(Content::with_text(&content));
+                        self.screen = Screen::ViewFtpFile;
                     } else {
                         println!("FTP stream is not connected.");
                     }
@@ -177,7 +194,11 @@ impl Window {
                     Task::none()
                 }
                 ButtonAction::ViewFile(file) => {
-                    self.screen = Screen::ViewFile(file);
+                    self.screen = Screen::ViewFile(file.clone());
+                    let content = vfs::read_file(vfs::FS::Local, &file).unwrap().content;
+
+                    let content = String::from_utf8_lossy(&content);
+                    self.text_content = Some(Content::with_text(content.to_string().as_str()));
                     Task::none()
                 }
                 ButtonAction::FTPLogin => {
@@ -205,9 +226,13 @@ impl Window {
         let view_screen = match &self.screen {
             Screen::Home => crate::home::home_screen(),
             Screen::Local(path) => crate::dir::directory(path),
-            Screen::ViewFile(path) => crate::text_viewer::file(path.clone()),
+            Screen::ViewFile(_path) => {
+                crate::text_viewer::display_file(self.text_content.as_ref().unwrap())
+            }
             Screen::ViewFTP(dir) => crate::dir::directory_info(dir),
-            Screen::ViewFtpFile(content) => crate::text_viewer::file_display(content),
+            Screen::ViewFtpFile => {
+                crate::text_viewer::display_file(self.text_content.as_ref().unwrap())
+            }
             Screen::FTPLogin => crate::ftp::ftp_login(
                 self.address.clone(),
                 self.username.clone(),
