@@ -25,5 +25,6 @@ pub fn run() -> IcedResult {
     .default_font(Font::MONOSPACE)
     .theme(window::Window::theme)
     .window(window::Window::window_settings())
+    .subscription(window::Window::subscription)
     .run_with(window::Window::new)
 }

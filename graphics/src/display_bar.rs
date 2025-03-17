@@ -1,3 +1,5 @@
+use iced::widget::text_input::Id;
+
 use crate::window::Message;
 
 #[derive(Debug)]
@@ -24,6 +26,7 @@ pub fn display_bar<'a>(content: String) -> iced::Element<'a, Message> {
     iced::widget::text_input("Enter file address", &content)
         .on_input(Message::DisplayBarContentChanged)
         .on_submit(Message::DisplayBarContentSubmitted)
+        .id(Id::new("display_bar"))
         .into()
 }
 

@@ -1,5 +1,6 @@
 use iced::advanced::graphics::image::image_rs::ImageFormat;
 use iced::widget::text_editor::{Action, Content};
+use iced::widget::text_input::{Id, focus};
 use iced::window::Settings;
 use iced::{Task, window};
 use vfs::DirectoryInformation;
@@ -25,6 +26,7 @@ pub enum Message {
     DisplayBarContentChanged(String),
     DisplayBarContentSubmitted,
     TextEditorAction(Action),
+    Event(iced::Event),
 }
 
 pub enum Screen {
@@ -80,6 +82,10 @@ impl Window {
         )
     }
 
+    pub fn subscription(&self) -> iced::Subscription<Message> {
+        iced::event::listen().map(Message::Event)
+    }
+
     pub fn title(&self) -> String {
         let app_name = String::from("BF Manager — ");
         match &self.screen {
@@ -128,6 +134,26 @@ impl Window {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NOACTION => Task::none(),
+            Message::Event(event) => match event {
+                iced::Event::Keyboard(key) => match key {
+                    iced::keyboard::Event::KeyReleased {
+                        key,
+                        location: _,
+                        modifiers: _,
+                    } => match key {
+                        iced::keyboard::Key::Character(key_code) => {
+                            if key_code.as_str() == "/" {
+                                focus(Id::new("display_bar"))
+                            } else {
+                                return Task::none();
+                            }
+                        }
+                        _ => Task::none(),
+                    },
+                    _ => Task::none(),
+                },
+                _ => Task::none(),
+            },
             Message::TextEditorAction(action) => {
                 // Disable editing for now
                 match action {
