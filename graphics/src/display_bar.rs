@@ -11,7 +11,6 @@ pub enum Expr {
 #[derive(Debug)]
 pub struct Bar {
     pub path: String,
-    pub page: usize,
     pub fs: BarFS,
 }
 
@@ -72,10 +71,6 @@ fn parse_content(lexed: Vec<Expr>) -> Bar {
         }
     }
 
-    let page = modifiers
-        .get("page")
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1);
     let fs = match modifiers.get("fs").map(|s| s.as_str()) {
         Some("local") => BarFS::Local,
         Some("ftp") => BarFS::FTP,
@@ -84,7 +79,7 @@ fn parse_content(lexed: Vec<Expr>) -> Bar {
 
     let path = path.trim().to_string();
 
-    Bar { path, page, fs }
+    Bar { path, fs }
 }
 
 fn lex_content(content: String) -> Vec<Expr> {
