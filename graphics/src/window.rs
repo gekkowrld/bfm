@@ -1,9 +1,12 @@
 use iced::advanced::graphics::image::image_rs::ImageFormat;
 use iced::widget::text_editor::{Action, Content};
 use iced::widget::text_input::{Id, focus};
+use iced::widget::{column, pick_list};
 use iced::window::Settings;
 use iced::{Task, window};
 use vfs::DirectoryInformation;
+
+use crate::ftp::{ExampleFtp, ftps};
 
 pub struct Window {
     screen: Screen,
@@ -14,6 +17,7 @@ pub struct Window {
     ftp_stream: Option<vfs::FTPStream>,
     display_bar: String,
     text_content: Option<Content>,
+    pub chosen_ftp: Option<ExampleFtp>,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +31,7 @@ pub enum Message {
     DisplayBarContentSubmitted,
     TextEditorAction(Action),
     Event(iced::Event),
+    SelectedFtp(ExampleFtp),
 }
 
 pub enum Screen {
@@ -77,6 +82,7 @@ impl Window {
                 opt_path: None,
                 display_bar: String::new(),
                 text_content: None,
+                chosen_ftp: None,
             },
             Task::none(),
         )
@@ -134,6 +140,18 @@ impl Window {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::NOACTION => Task::none(),
+            Message::SelectedFtp(example_ftp) => {
+                self.chosen_ftp = Some(example_ftp);
+                match self.chosen_ftp {
+                    Some(cf) => {
+                        self.address = cf.address.to_string();
+                        self.password = cf.password.to_string();
+                        self.username = cf.username.to_string();
+                    }
+                    None => {}
+                }
+                Task::none()
+            }
             Message::Event(event) => match event {
                 iced::Event::Keyboard(key) => match key {
                     iced::keyboard::Event::KeyReleased {
@@ -244,7 +262,10 @@ impl Window {
 
                     let ftp_stream = match self.ftp_stream {
                         Some(_) => self.ftp_stream.as_mut(),
-                        None => None,
+                        None => {
+                            println!("Error Occured");
+                            None
+                        }
                     };
 
                     self.screen = list_ftp_files(ftp_stream, None);
@@ -268,11 +289,19 @@ impl Window {
                 self.opt_path.as_ref().unwrap_or(&"".to_string()),
                 self.text_content.as_ref().unwrap(),
             ),
-            Screen::FTPLogin => crate::ftp::ftp_login(
-                self.address.clone(),
-                self.username.clone(),
-                self.password.clone(),
-            ),
+            Screen::FTPLogin => {
+                let login_details = crate::ftp::ftp_login(
+                    self.address.clone(),
+                    self.username.clone(),
+                    self.password.clone(),
+                );
+                column![
+                    pick_list(ftps(), self.chosen_ftp, Message::SelectedFtp)
+                        .placeholder("Select example ftp to start exploring..."),
+                    login_details
+                ]
+                .into()
+            }
         };
 
         iced::widget::Column::new()
