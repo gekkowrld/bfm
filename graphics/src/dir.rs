@@ -1,6 +1,6 @@
 use crate::window::Message;
 use iced::Element;
-use iced::widget::scrollable;
+use iced::widget::{scrollable, text};
 use vfs::DirectoryInformation as DI;
 
 pub fn directory_info(dir: &DI) -> Element<'static, Message> {
@@ -13,6 +13,9 @@ pub fn directory_info(dir: &DI) -> Element<'static, Message> {
 }
 
 pub fn directory(path: &str) -> Element<Message> {
-    let dir = vfs::list_files(vfs::FS::Local, path).unwrap();
+    let dir = match vfs::list_files(vfs::FS::Local, path) {
+        Ok(dir) => dir,
+        Err(err) => return text!("{path}:: {}", err.to_string()).into(),
+    };
     directory_info(&dir)
 }
