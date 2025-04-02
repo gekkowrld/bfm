@@ -145,7 +145,7 @@ jobs:
           command: "test"
           target: ${{ matrix.platform.target }}
           toolchain: ${{ matrix.toolchain }}
-          args: "--locked --release"
+          args: "--release"
           # This works around the issue in https://github.com/cross-rs/cross/issues/1450. The `main`
           # branch updated its images long ago, but the last cross release, 0.2.5, is still using
           # Ubuntu 16.04 as the base for some images.
@@ -161,7 +161,7 @@ jobs:
           command: "build"
           target: ${{ matrix.platform.target }}
           toolchain: ${{ matrix.toolchain }}
-          args: "--locked --release"
+          args: "--release"
           strip: true
           cross-version: 107433fa9d71d7eb506cd5bf5467bab89edb7a52
       - name: Publish artifacts and release
